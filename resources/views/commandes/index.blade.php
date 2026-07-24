@@ -9,8 +9,9 @@
 <div class="d-flex align-items-center justify-content-between mb-4">
     <div>
         <h5 class="mb-0 fw-bold">Commandes du jour</h5>
-        <small class="text-muted" id="subtitle-count">
-            {{ $commandes->total() }} commande(s) — {{ now()->locale('fr')->translatedFormat('l d F Y') }}
+        <small class="text-muted d-inline-flex align-items-center gap-2 mt-1">
+            <span class="live-dot-mini" title="Actualisation automatique"></span>
+            <span id="subtitle-count">{{ $commandes->total() }} commande(s)</span>
         </small>
     </div>
     <a href="{{ route('commandes.create') }}" class="btn btn-dark px-4">
@@ -22,10 +23,10 @@
 <div class="row g-3 mb-4">
     @php
         $kpis = [
-            ['label'=>'En attente', 'count'=>$commandes->getCollection()->where('statut','en_attente')->count(), 'accent'=>'#c9a96e','icon'=>'hourglass-split'],
-            ['label'=>'En cuisson', 'count'=>$commandes->getCollection()->where('statut','en_cuisson')->count(), 'accent'=>'#8a94a6','icon'=>'fire'],
-            ['label'=>'Prêtes',     'count'=>$commandes->getCollection()->where('statut','prete')->count(),      'accent'=>'#5f9c76','icon'=>'check-circle'],
-            ['label'=>'Payées',     'count'=>$commandes->getCollection()->where('statut','payee')->count(),      'accent'=>'#212529','icon'=>'wallet'],
+            ['key'=>'en_attente', 'label'=>'En attente', 'count'=>$commandes->getCollection()->where('statut','en_attente')->count(), 'accent'=>'#c9a96e','icon'=>'hourglass-split'],
+            ['key'=>'en_cuisson', 'label'=>'En cuisson', 'count'=>$commandes->getCollection()->where('statut','en_cuisson')->count(), 'accent'=>'#8a94a6','icon'=>'fire'],
+            ['key'=>'prete',      'label'=>'Prêtes',     'count'=>$commandes->getCollection()->where('statut','prete')->count(),      'accent'=>'#5f9c76','icon'=>'check-circle'],
+            ['key'=>'payee',      'label'=>'Payées',     'count'=>$commandes->getCollection()->where('statut','payee')->count(),      'accent'=>'#212529','icon'=>'wallet'],
         ];
     @endphp
     @foreach($kpis as $kpi)
@@ -34,9 +35,9 @@
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <div class="kpi-label">{{ $kpi['label'] }}</div>
-                    <div class="kpi-value">{{ $kpi['count'] }}</div>
+                    <div class="kpi-value" id="kpi-value-{{ $kpi['key'] }}">{{ $kpi['count'] }}</div>
                 </div>
-                <div class="kpi-icon" style="color:{{ $kpi['accent'] }}">
+                <div class="kpi-icon" style="color:{{ $kpi['accent'] }};background:{{ $kpi['accent'] }}17">
                     <i class="bi bi-{{ $kpi['icon'] }}"></i>
                 </div>
             </div>
@@ -210,7 +211,7 @@
                             ];
                             [$slabel, $sclass] = $statusConfig[$cmd->statut] ?? [$cmd->statut, 'badge-secondary'];
                             @endphp
-                            <span class="statut-badge {{ $sclass }}">{{ $slabel }}</span>
+                            <span class="statut-badge {{ $sclass }}"><span class="statut-dot"></span>{{ $slabel }}</span>
                         </td>
 
                         <td>
@@ -238,7 +239,7 @@
                                     <i class="bi bi-currency-exchange me-1"></i>
                                 </a>
                                 @endif
-                                @if(!in_array($cmd->statut, ['payee','annulee']))
+                                @if(!in_array($cmd->statut, ['payee','annulee','prete','en_attente ']))
                                 <button type="button" class="action-btn danger js-cmd-annuler"
                                     data-cmd-id="{{ $cmd->id }}" data-cmd-num="{{ $cmd->numero }}"
                                     title="Annuler">
@@ -305,38 +306,46 @@
     <style>
         .fw-500 { font-weight: 500; }
 
-        /* ── KPI (sobres, un seul accent fin) ── */
+        /* ── KPI (modernisées : icônes teintées, radius plus doux) ── */
         .kpi-card {
             position: relative;
             background: #fff;
             border: 1px solid #eef0f3;
-            border-radius: 12px;
-            padding: 16px 20px 18px;
+            border-radius: 14px;
+            padding: 17px 20px 19px;
             overflow: hidden;
-            transition: box-shadow .15s, transform .15s;
+            transition: box-shadow .18s ease, transform .18s ease;
         }
-        .kpi-card:hover { box-shadow: 0 6px 18px rgba(20,20,30,.06); transform: translateY(-1px); }
+        .kpi-card:hover { box-shadow: 0 10px 26px rgba(20,20,30,.07); transform: translateY(-2px); }
         .kpi-label {
             font-size: 11px; font-weight: 600;
             color: #9299a8; text-transform: uppercase;
-            letter-spacing: .05em; margin-bottom: 4px;
+            letter-spacing: .05em; margin-bottom: 5px;
         }
         .kpi-value {
-            font-size: 26px; font-weight: 700; color: #1a1a2e; line-height: 1;
+            font-size: 27px; font-weight: 700; color: #1a1a2e; line-height: 1;
+            transition: color .3s;
         }
         .kpi-icon {
-            width: 38px; height: 38px; border-radius: 10px;
+            width: 40px; height: 40px; border-radius: 11px;
             display: flex; align-items: center; justify-content: center;
             font-size: 18px; flex-shrink: 0;
-            background: #f7f7f9;
         }
         .kpi-bar {
             position: absolute; left: 0; bottom: 0;
-            width: 100%; height: 3px; opacity: .55;
+            width: 100%; height: 3px; opacity: .5;
         }
 
+        /* ── Indicateur "actualisation automatique" ── */
+        .live-dot-mini {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: #198754; flex-shrink: 0;
+            animation: liveBlink 1.6s infinite;
+        }
+        @keyframes liveBlink { 0%,100%{opacity:1} 50%{opacity:.25} }
+
         /* ── CARTE FILTRES ── */
-        .filter-card { border: 1px solid #eef0f3; border-radius: 12px; }
+        .filter-card { border: 1px solid #eef0f3; border-radius: 14px; }
         .filter-card .card-body { padding: 20px 22px; }
         .filter-block { display: flex; flex-direction: column; gap: 7px; }
         .filter-label {
@@ -372,6 +381,9 @@
         .period-btn.active { background: #f0f0f5; border-color: #c9a96e; color: #1a1a2e; }
 
         /* ── TABLE ── */
+        .table-responsive { border-radius: 14px; overflow: hidden; }
+        #cmds-table tbody tr { transition: background-color .15s; }
+        #cmds-table tbody tr:hover { background-color: #fafafa; }
         .table-badge {
             display: inline-flex; align-items: center;
             padding: 3px 10px; border-radius: 6px;
@@ -388,9 +400,12 @@
             font-size: 10px; font-weight: 700; flex-shrink: 0;
         }
         .statut-badge {
-            display: inline-block; padding: 4px 10px;
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 4px 11px 4px 9px;
             border-radius: 20px; font-size: 11px; font-weight: 600;
+            transition: background-color .3s, color .3s;
         }
+        .statut-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .7; flex-shrink: 0; }
         .badge-en_attente { background:#fff3cd; color:#856404; }
         .badge-en_cuisson { background:#cff4fc; color:#055160; }
         .badge-prete      { background:#d1e7dd; color:#0a3622; }
@@ -398,16 +413,24 @@
         .badge-payee      { background:#212529; color:#fff; }
         .badge-annulee    { background:#f8d7da; color:#842029; }
 
+        /* Mise en avant discrète d'une ligne nouvelle ou fraîchement mise à jour,
+           le temps d'un court fondu — sans jamais déplacer ni bloquer l'interface. */
+        @keyframes rowFlash {
+            0%   { background-color: rgba(201,169,110,.16); }
+            100% { background-color: transparent; }
+        }
+        #cmds-table tbody tr.row-flash { animation: rowFlash 1.8s ease-out; }
+
         /* ── ACTIONS ── */
         .action-btn {
             width: 30px; height: 30px;
-            border-radius: 7px; border: 1px solid #eef0f3;
+            border-radius: 8px; border: 1px solid #eef0f3;
             background: #fff; display: inline-flex;
             align-items: center; justify-content: center;
             font-size: 13px; color: #6b7280; cursor: pointer;
-            transition: all .12s; text-decoration: none;
+            transition: all .14s; text-decoration: none;
         }
-        .action-btn:hover { background: #f5f5f7; color: #1a1a2e; border-color: #d0d0d8; }
+        .action-btn:hover { background: #f5f5f7; color: #1a1a2e; border-color: #d0d0d8; transform: translateY(-1px); }
         .action-btn.success { color: #198754; border-color: #d1e7dd; }
         .action-btn.success:hover { background: #d1e7dd; }
         .action-btn.danger  { color: #dc3545; border-color: #f8d7da; }
@@ -790,7 +813,7 @@
                     if (row) {
                         row.dataset.statut = 'annulee';
                         row.querySelector('.statut-badge').outerHTML =
-                            '<span class="statut-badge badge-annulee">Annulée</span>';
+                            '<span class="statut-badge badge-annulee"><span class="statut-dot"></span>Annulée</span>';
                         // Cacher les boutons d'action
                         row.querySelectorAll('.action-btn.danger, .action-btn.success, a[href*="show"]')
                             .forEach(el => el.remove());
@@ -846,5 +869,153 @@
                 appliquerFiltresLocaux();
             }
         });
+
+        // ══════════════════════════════════════════════════════
+        // ACTUALISATION AUTOMATIQUE SILENCIEUSE
+        // Récupère en tâche de fond les commandes de la période
+        // actuellement affichée et ne modifie QUE ce qui a changé
+        // (nouvelle commande, statut, total) — jamais de rechargement
+        // de page, jamais de saut de scroll, jamais de flash global.
+        // ══════════════════════════════════════════════════════
+        const STATUT_CONFIG = {
+            en_attente: ['En attente', 'badge-en_attente'],
+            en_cuisson: ['En cuisson', 'badge-en_cuisson'],
+            prete:      ['Prête ✓',    'badge-prete'],
+            servie:     ['Servie',     'badge-servie'],
+            payee:      ['Payée',      'badge-payee'],
+            annulee:    ['Annulée',    'badge-annulee'],
+        };
+
+        function heureRelativeCmd(dateStr) {
+            const diffMin = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
+            if (diffMin < 1)  return "à l'instant";
+            if (diffMin < 60) return `il y a ${diffMin} min`;
+            const h = Math.floor(diffMin / 60);
+            if (h < 24) return `il y a ${h} h`;
+            return `il y a ${Math.floor(h / 24)} j`;
+        }
+
+        function buildActionsHtmlCmd(cmd) {
+            let html = `<button type="button" class="action-btn js-cmd-detail" data-cmd-id="${cmd.id}" title="Voir le détail"><i class="bi bi-eye"></i></button>`;
+            if (!['payee','annulee'].includes(cmd.statut)) {
+                html += `<a href="/commandes/${cmd.id}" class="action-btn" title="Modifier"><i class="bi bi-pencil"></i></a>`;
+            }
+            if (cmd.statut === 'prete') {
+                html += `<a href="{{ route('caisse.index') }}" class="action-btn success" title="Encaisser"><i class="bi bi-currency-exchange me-1"></i></a>`;
+            }
+            if (!['payee','annulee','prete','en_attente'].includes(cmd.statut)) {
+                html += `<button type="button" class="action-btn danger js-cmd-annuler" data-cmd-id="${cmd.id}" data-cmd-num="${cmd.numero}" title="Annuler"><i class="bi bi-x-circle"></i></button>`;
+            }
+            return html;
+        }
+
+        function buildRowCmd(cmd) {
+            const [slabel, sclass] = STATUT_CONFIG[cmd.statut] ?? [cmd.statut, ''];
+            const tableHtml = cmd.table
+                ? `<span class="table-badge"><i class="bi bi-grid-3x3-gap me-1"></i>T${cmd.table.numero}</span>`
+                : `<span class="table-badge emporter"><i class="bi bi-bag me-1"></i>Emporter</span>`;
+            const typeLabel = cmd.type === 'sur_place' ? 'Sur place' : (cmd.type === 'emporter' ? 'Emporter' : 'Livraison');
+            const searchStr = `${cmd.numero} ${cmd.table?.numero ?? ''} ${cmd.serveur?.name ?? ''}`.toLowerCase();
+            const dateStr   = (cmd.created_at || '').slice(0, 10);
+            const heure     = new Date(cmd.created_at).toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit' });
+            const serveurInit = (cmd.serveur?.name ?? '??').substring(0, 2).toUpperCase();
+            const serveurNom  = (cmd.serveur?.name ?? '').substring(0, 12);
+
+            return `
+            <tr id="cmd-row-${cmd.id}" data-statut="${cmd.statut}" data-search="${searchStr}" data-date="${dateStr}">
+                <td class="ps-4">
+                    <div class="fw-bold" style="font-size:13px">${cmd.numero}</div>
+                    <small class="text-muted">${typeLabel}</small>
+                </td>
+                <td>${tableHtml}</td>
+                <td style="font-size:12px;color:#6b7280">${cmd.client?.nom ?? '—'}</td>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="serveur-avatar">${serveurInit}</div>
+                        <span style="font-size:12px">${serveurNom}</span>
+                    </div>
+                </td>
+                <td class="text-center"><span class="badge bg-light border text-dark" style="font-size:11px">${cmd.items_count ?? 0}</span></td>
+                <td class="text-end fw-bold" style="color:#c9a96e;font-size:14px">${Number(cmd.total).toLocaleString('fr')} F</td>
+                <td><span class="statut-badge ${sclass}"><span class="statut-dot"></span>${slabel}</span></td>
+                <td>
+                    <div style="font-size:13px;font-weight:500">${heure}</div>
+                    <small class="text-muted" style="font-size:11px">${heureRelativeCmd(cmd.created_at)}</small>
+                </td>
+                <td class="text-end pe-4">
+                    <div class="d-flex justify-content-end gap-1">${buildActionsHtmlCmd(cmd)}</div>
+                </td>
+            </tr>`;
+        }
+
+        function flashRow(el) {
+            el.classList.remove('row-flash');
+            void el.offsetWidth; // relance l'animation même si la classe était déjà présente
+            el.classList.add('row-flash');
+        }
+
+        async function pollCommandes() {
+            try {
+                const debut = document.getElementById('date-debut').value;
+                const fin   = document.getElementById('date-fin').value;
+                const params = new URLSearchParams({ debut, fin });
+
+                const r = await fetch(`{{ route('commandes.index') }}/poll?${params}`, {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    cache: 'no-store',
+                });
+                if (!r.ok) return;
+                const cmds = await r.json();
+                if (!Array.isArray(cmds)) return;
+
+                const tbody = document.getElementById('cmds-tbody');
+                const kpiCounts = { en_attente: 0, en_cuisson: 0, prete: 0, payee: 0 };
+
+                cmds.forEach(cmd => {
+                    if (kpiCounts[cmd.statut] !== undefined) kpiCounts[cmd.statut]++;
+
+                    const existing = document.getElementById(`cmd-row-${cmd.id}`);
+
+                    if (!existing) {
+                        // Nouvelle commande : insérée en haut de liste, discrètement mise en avant
+                        tbody.insertAdjacentHTML('afterbegin', buildRowCmd(cmd));
+                        const el = document.getElementById(`cmd-row-${cmd.id}`);
+                        if (el) flashRow(el);
+                        return;
+                    }
+
+                    // On ne touche au DOM que si quelque chose a réellement changé,
+                    // pour ne jamais interrompre une lecture ou une interaction en cours.
+                    const totalActuel = Number(existing.querySelector('td:nth-child(6)')?.textContent.replace(/[^\d]/g, '')) || 0;
+                    const aChange = existing.dataset.statut !== cmd.statut || totalActuel !== Math.round(Number(cmd.total));
+
+                    if (aChange) {
+                        const temp = document.createElement('tbody');
+                        temp.innerHTML = buildRowCmd(cmd);
+                        const nouvelleLigne = temp.firstElementChild;
+                        existing.replaceWith(nouvelleLigne);
+                        flashRow(nouvelleLigne);
+                    }
+                });
+
+                // Retirer le message "aucune commande" si des données sont désormais présentes
+                if (cmds.length > 0) {
+                    tbody.querySelector('tr td[colspan]')?.closest('tr')?.remove();
+                }
+
+                // Ré-appliquer les filtres client (statut / recherche) après le patch
+                appliquerFiltresLocaux();
+
+                // Compteur d'en-tête + KPI, tous mis à jour en silence
+                document.getElementById('subtitle-count').textContent = `${cmds.length} commande(s)`;
+                Object.entries(kpiCounts).forEach(([k, v]) => {
+                    const el = document.getElementById(`kpi-value-${k}`);
+                    if (el && el.textContent !== String(v)) el.textContent = v;
+                });
+
+            } catch (e) { /* réseau indisponible — on retente au prochain tick, sans rien signaler */ }
+        }
+
+        setInterval(pollCommandes, 10000);
     </script>
 @endpush

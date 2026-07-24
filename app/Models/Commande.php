@@ -49,4 +49,5 @@ class Commande extends Model
         $last = static::whereDate('created_at', today())->count() + 1;
         return 'CMD-'.$date.'-'.str_pad($last, 4, '0', STR_PAD_LEFT);
     }
+    
 }
