@@ -5,422 +5,429 @@
 
 @section('content')
 
-{{-- ══ NAVIGATION ONGLETS ══ --}}
-<div class="caisse-nav mb-4">
-    <button class="caisse-nav-btn active" id="tab-caisse-btn"
-        onclick="switchCaisseTab('caisse', this)">
-        <i class="bi bi-cash-register me-2"></i>Caisse
-    </button>
-    <button class="caisse-nav-btn" id="tab-historique-btn"
-        onclick="switchCaisseTab('historique', this)">
-        <i class="bi bi-clock-history me-2"></i>Historique
-        <span class="badge bg-secondary ms-1">{{ $stats_jour['nb_encais'] }}</span>
-    </button>
-</div>
-
-{{-- ══════════════════════════════════════
-     ONGLET CAISSE
-══════════════════════════════════════ --}}
-<div id="tab-caisse">
-
-    {{-- STATS DU JOUR --}}
-    <div class="row g-3 mb-4">
-        <div class="col-6 col-xl-3">
-            <div class="stat-card">
-                <div class="stat-label"><i class="bi bi-graph-up me-1"></i>CA du jour</div>
-                <div class="stat-value">
-                    {{ number_format($stats_jour['ca'], 0, ',', ' ') }}
-                    <small class="text-muted ms-1" style="font-size:13px">{{ $monnaie }}</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-xl-3">
-            <div class="stat-card">
-                <div class="stat-label"><i class="bi bi-receipt me-1"></i>Encaissements</div>
-                <div class="stat-value">{{ $stats_jour['nb_encais'] }}</div>
-            </div>
-        </div>
-        <div class="col-6 col-xl-3">
-            <div class="stat-card">
-                <div class="stat-label"><i class="bi bi-cash me-1"></i>Espèces</div>
-                <div class="stat-value">
-                    {{ number_format($stats_jour['especes'], 0, ',', ' ') }}
-                    <small class="text-muted ms-1" style="font-size:13px">{{ $monnaie }}</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-xl-3">
-            <div class="stat-card">
-                <div class="stat-label"><i class="bi bi-phone me-1"></i>Mobile Money</div>
-                <div class="stat-value">
-                    {{ number_format($stats_jour['mobile'], 0, ',', ' ') }}
-                    <small class="text-muted ms-1" style="font-size:13px">{{ $monnaie }}</small>
-                </div>
-            </div>
-        </div>
+    {{-- ══ NAVIGATION ONGLETS ══ --}}
+    <div class="caisse-nav mb-4">
+        <button class="caisse-nav-btn active" id="tab-caisse-btn"
+            onclick="switchCaisseTab('caisse', this)">
+            <i class="bi bi-cash-register me-2"></i>Caisse
+        </button>
+        <button class="caisse-nav-btn" id="tab-historique-btn"
+            onclick="switchCaisseTab('historique', this)">
+            <i class="bi bi-clock-history me-2"></i>Historique
+            <span class="badge bg-secondary ms-1">{{ $stats_jour['nb_encais'] }}</span>
+        </button>
     </div>
 
-    <div class="row g-4">
+    {{-- ══════════════════════════════════════
+        ONGLET CAISSE
+    ══════════════════════════════════════ --}}
+    <div id="tab-caisse">
 
-        {{-- ── LISTE COMMANDES PRÊTES ── --}}
-        <div class="col-lg-5">
-            <div class="card h-100">
-                <div class="card-header d-flex align-items-center justify-content-between py-3 px-4">
-                    <span class="fw-bold">
-                        <i class="bi bi-check-circle-fill text-success me-2"></i>
-                        Commandes prêtes
-                    </span>
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="live-dot-wrap">
-                            <div class="live-dot"></div>
-                            <span style="font-size:11px;color:#9299a8"></span>
-                        </div>
-                        <span class="badge bg-success rounded-pill" id="count-pretes">
-                            {{ $commandes_pretes->count() }}
-                        </span>
+        {{-- STATS DU JOUR --}}
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-xl-3">
+                <div class="stat-card">
+                    <div class="stat-label"><i class="bi bi-graph-up me-1"></i>CA du jour</div>
+                    <div class="stat-value">
+                        {{ number_format($stats_jour['ca'], 0, ',', ' ') }}
+                        <small class="text-muted ms-1" style="font-size:13px">{{ $monnaie }}</small>
                     </div>
                 </div>
-                <div class="card-body p-2 overflow-auto" style="max-height:560px" id="list-pretes">
-                    @forelse($commandes_pretes as $cmd)
-                    <div class="commande-prete-item" id="prete-{{ $cmd->id }}"
-                        onclick="selectionnerCommande({{ $cmd->id }})">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="prete-icon">
-                                <i class="bi bi-receipt"></i>
-                            </div>
-                            <div class="flex-grow-1 min-w-0">
-                                <div class="fw-bold" style="font-size:14px">{{ $cmd->numero }}</div>
-                                <div style="font-size:12px;color:#9299a8">
-                                    {{ $cmd->table ? 'Table '.$cmd->table->numero : 'Emporter' }}
-                                    · {{ $cmd->items->count() }} article(s)
-                                    @if($cmd->client) · {{ $cmd->client->nom }} @endif
-                                </div>
-                            </div>
-                            <div class="text-end flex-shrink-0">
-                                <div class="fw-bold" style="color:#c9a96e;font-size:15px">
-                                    {{ number_format($cmd->total, 0, ',', ' ') }} {{ $monnaie }}
-                                </div>
-                                <div class="prete-time" style="font-size:11px;color:#9299a8"
-                                    data-prete-at="{{ $cmd->prete_at?->toIso8601String() }}">
-                                    {{ $cmd->prete_at?->diffForHumans() ?? '—' }}
-                                </div>
-                            </div>
-                            <button type="button" class="tbl-action-btn flex-shrink-0"
-                                title="Imprimer la facture provisoire"
-                                onclick="imprimerFactureProvisoire({{ $cmd->id }}, event)">
-                                <i class="bi bi-printer"></i>
-                            </button>
-                        </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="stat-card">
+                    <div class="stat-label"><i class="bi bi-receipt me-1"></i>Encaissements</div>
+                    <div class="stat-value">{{ $stats_jour['nb_encais'] }}</div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="stat-card">
+                    <div class="stat-label"><i class="bi bi-cash me-1"></i>Espèces</div>
+                    <div class="stat-value">
+                        {{ number_format($stats_jour['especes'], 0, ',', ' ') }}
+                        <small class="text-muted ms-1" style="font-size:13px">{{ $monnaie }}</small>
                     </div>
-                    @empty
-                    <div class="text-center py-5 text-muted" id="empty-pretes">
-                        <i class="bi bi-hourglass-split d-block fs-1 mb-2 opacity-25"></i>
-                        <div style="font-size:14px">Aucune commande prête</div>
-                        <small>Les commandes validées par la cuisine apparaîtront ici</small>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="stat-card">
+                    <div class="stat-label"><i class="bi bi-phone me-1"></i>Mobile Money</div>
+                    <div class="stat-value">
+                        {{ number_format($stats_jour['mobile'], 0, ',', ' ') }}
+                        <small class="text-muted ms-1" style="font-size:13px">{{ $monnaie }}</small>
                     </div>
-                    @endforelse
                 </div>
             </div>
         </div>
 
-        {{-- ── CAISSE POS ── --}}
-        <div class="col-lg-7">
-            <div class="card">
-                <div class="card-header py-3 px-4 fw-bold d-flex align-items-center justify-content-between">
-                    <span class="d-flex align-items-center gap-2">
-                        <i class="bi bi-cash-register"></i>Caisse
-                    </span>
-                    <button type="button" class="btn btn-sm btn-outline-dark" id="btn-facture-provisoire"
-                        onclick="imprimerFactureProvisoireSelection()" disabled>
-                        <i class="bi bi-printer me-1"></i>Facture provisoire
-                    </button>
-                </div>
-                <div class="card-body">
+        <div class="row g-4">
 
-                    {{-- État vide --}}
-                    <div id="ticket-vide" class="ticket-vide-state">
-                        <div class="tve-icon">💳</div>
-                        <div class="tve-title">Sélectionnez une commande</div>
-                        <div class="tve-sub">Cliquez sur une commande prête pour l'encaisser</div>
-                    </div>
-
-                    {{-- Ticket --}}
-                    <div id="ticket-content" style="display:none">
-
-                        {{-- Header ticket --}}
-                        <div class="ticket-header mb-3">
-                            <div class="th-left">
-                                <div class="th-num" id="ticket-numero">—</div>
-                                <div class="th-info" id="ticket-info">—</div>
+            {{-- ── LISTE COMMANDES PRÊTES ── --}}
+            <div class="col-lg-5">
+                <div class="card h-100">
+                    <div class="card-header d-flex align-items-center justify-content-between py-3 px-4">
+                        <span class="fw-bold">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            Commandes prêtes
+                        </span>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="live-dot-wrap">
+                                <div class="live-dot"></div>
+                                <span style="font-size:11px;color:#9299a8"></span>
                             </div>
-                            <div class="th-right">
-                                <div class="th-total" id="ticket-total">0 F</div>
-                                <div class="th-count" id="ticket-items-count">0 article(s)</div>
-                            </div>
-                        </div>
-
-                        {{-- Articles --}}
-                        <div class="ticket-items-wrap mb-3" id="ticket-items"></div>
-
-                        {{-- Sous-total / Remise --}}
-                        <div id="ticket-remise-wrap" style="display:none">
-                            <div class="d-flex justify-content-between mb-1"
-                                style="font-size:13px;color:#9299a8">
-                                <span>Remise</span>
-                                <span id="ticket-remise-val" class="text-danger">—</span>
-                            </div>
-                        </div>
-
-                        <hr class="my-3">
-
-                        {{-- Mode de paiement --}}
-                        <div class="mb-3">
-                            <div class="section-label mb-2">Mode de paiement</div>
-                            <div class="row g-2">
-                                <div class="col-4">
-                                    <div class="pay-btn active" data-mode="especes"
-                                        onclick="selectMode('especes', this)">
-                                        <i class="bi bi-cash"></i>
-                                        <div>Espèces</div>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="pay-btn" data-mode="mobile_money"
-                                        onclick="selectMode('mobile_money', this)">
-                                        <i class="bi bi-phone"></i>
-                                        <div>Mobile Money</div>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="pay-btn" data-mode="carte"
-                                        onclick="selectMode('carte', this)">
-                                        <i class="bi bi-credit-card"></i>
-                                        <div>Carte</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Référence --}}
-                        <div id="ref-wrap" class="mb-3" style="display:none">
-                            <div class="section-label mb-1">Référence transaction</div>
-                            <input type="text" id="ref-input" class="form-control"
-                                placeholder="N° transaction, code de confirmation...">
-                        </div>
-
-                        {{-- Montant reçu --}}
-                        <div class="mb-3">
-                            <div class="section-label mb-1">Montant reçu</div>
-                            <div class="input-group input-group-lg">
-                                <input type="number" id="montant-recu"
-                                    class="form-control montant-input"
-                                    placeholder="0"
-                                    oninput="calculerMonnaie()">
-                                <span class="input-group-text fw-bold">{{ $monnaie }}</span>
-                            </div>
-                        </div>
-
-                        {{-- Raccourcis --}}
-                        <div class="row g-2 mb-3" id="shortcuts"></div>
-
-                        {{-- Monnaie --}}
-                        <div id="monnaie-box" class="monnaie-box mb-3" style="display:none">
-                            <div class="monnaie-label">MONNAIE À RENDRE</div>
-                            <div class="monnaie-val" id="monnaie-rendue">0 F</div>
-                        </div>
-
-                        {{-- Bouton encaisser --}}
-                        <button class="btn-encaisser-full" id="btn-encaisser"
-                            onclick="encaisser()" disabled>
-                            <span id="enc-txt">
-                                <i class="bi bi-check-circle me-2"></i>Encaisser
+                            <span class="badge bg-success rounded-pill" id="count-pretes">
+                                {{ $commandes_pretes->count() }}
                             </span>
-                            <div class="enc-spinner d-none" id="enc-spin"></div>
+                        </div>
+                    </div>
+                    <div class="card-body p-2 overflow-auto" style="max-height:560px" id="list-pretes">
+                        @forelse($commandes_pretes as $cmd)
+                        <div class="commande-prete-item" id="prete-{{ $cmd->id }}"
+                            onclick="selectionnerCommande({{ $cmd->id }})">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="prete-icon">
+                                    <i class="bi bi-receipt"></i>
+                                </div>
+                                <div class="flex-grow-1 min-w-0">
+                                    <div class="fw-bold" style="font-size:14px">{{ $cmd->numero }}</div>
+                                    <div style="font-size:12px;color:#9299a8">
+                                        {{ $cmd->table ? 'Table '.$cmd->table->numero : ($cmd->type === 'livraison' ? 'Livraison' : 'Emporter') }}
+                                        · {{ $cmd->items->count() }} article(s)
+                                        @if($cmd->client) · {{ $cmd->client->nom }} @endif
+                                    </div>
+                                </div>
+                                <div class="text-end flex-shrink-0">
+                                    <div class="fw-bold" style="color:#c9a96e;font-size:15px">
+                                        {{ number_format($cmd->total, 0, ',', ' ') }} {{ $monnaie }}
+                                    </div>
+                                    <div class="prete-time" style="font-size:11px;color:#9299a8"
+                                        data-prete-at="{{ $cmd->prete_at?->toIso8601String() }}">
+                                        {{ $cmd->prete_at?->diffForHumans() ?? '—' }}
+                                    </div>
+                                </div>
+                                <button type="button" class="tbl-action-btn flex-shrink-0"
+                                    title="Imprimer la facture provisoire"
+                                    onclick="imprimerFactureProvisoire({{ $cmd->id }}, event)">
+                                    <i class="bi bi-printer"></i>
+                                </button>
+                            </div>
+                        </div>
+                        @empty
+                        <div class="text-center py-5 text-muted" id="empty-pretes">
+                            <i class="bi bi-hourglass-split d-block fs-1 mb-2 opacity-25"></i>
+                            <div style="font-size:14px">Aucune commande prête</div>
+                            <small>Les commandes validées par la cuisine apparaîtront ici</small>
+                        </div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+
+            {{-- ── CAISSE POS ── --}}
+            <div class="col-lg-7">
+                <div class="card">
+                    <div class="card-header py-3 px-4 fw-bold d-flex align-items-center justify-content-between">
+                        <span class="d-flex align-items-center gap-2">
+                            <i class="bi bi-cash-register"></i>Caisse
+                        </span>
+                        <button type="button" class="btn btn-sm btn-outline-dark" id="btn-facture-provisoire"
+                            onclick="imprimerFactureProvisoireSelection()" disabled>
+                            <i class="bi bi-printer me-1"></i>Facture provisoire
                         </button>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+                    <div class="card-body">
 
-{{-- ══════════════════════════════════════
-     ONGLET HISTORIQUE
-══════════════════════════════════════ --}}
-<div id="tab-historique" style="display:none">
+                        {{-- État vide --}}
+                        <div id="ticket-vide" class="ticket-vide-state">
+                            <div class="tve-icon">💳</div>
+                            <div class="tve-title">Sélectionnez une commande</div>
+                            <div class="tve-sub">Cliquez sur une commande prête pour l'encaisser</div>
+                        </div>
 
-    {{-- Filtres --}}
-    <div class="filtre-bar mb-4">
-        <div class="row g-2 align-items-end">
-            <div class="col-6 col-md-2">
-                <label class="form-label fw-500 mb-1" style="font-size:11px;text-transform:uppercase;color:#9299a8">Du</label>
-                <input type="date" id="hist-debut" class="form-control form-control-sm"
-                    value="{{ today()->format('Y-m-d') }}">
-            </div>
-            <div class="col-6 col-md-2">
-                <label class="form-label fw-500 mb-1" style="font-size:11px;text-transform:uppercase;color:#9299a8">Au</label>
-                <input type="date" id="hist-fin" class="form-control form-control-sm"
-                    value="{{ today()->format('Y-m-d') }}">
-            </div>
-            <div class="col-6 col-md-2">
-                <label class="form-label fw-500 mb-1" style="font-size:11px;text-transform:uppercase;color:#9299a8">Mode</label>
-                <select id="hist-mode" class="form-select form-select-sm">
-                    <option value="">Tous</option>
-                    <option value="especes">Espèces</option>
-                    <option value="mobile_money">Mobile Money</option>
-                    <option value="carte">Carte</option>
-                </select>
-            </div>
-            <div class="col-6 col-md-auto">
-                <label class="form-label mb-1 d-block" style="font-size:11px;color:transparent">.</label>
-                <div class="d-flex gap-1">
-                    @foreach(['today'=>"Auj.",'week'=>'Semaine','month'=>'Mois'] as $p => $l)
-                    <button class="btn btn-sm btn-outline-secondary period-btn {{ $p==='today'?'active':'' }}"
-                        data-period="{{ $p }}" onclick="setPeriodHist('{{ $p }}', this)">
-                        {{ $l }}
-                    </button>
-                    @endforeach
-                </div>
-            </div>
-            <div class="col-md-auto ms-md-auto">
-                <label class="form-label mb-1 d-block" style="font-size:11px;color:transparent">.</label>
-                <button class="btn btn-dark btn-sm px-4" onclick="chargerHistorique()">
-                    <i class="bi bi-funnel me-1"></i>Filtrer
-                </button>
-            </div>
-        </div>
-    </div>
+                        {{-- Ticket --}}
+                        <div id="ticket-content" style="display:none">
 
-    {{-- KPIs historique --}}
-    <div class="row g-3 mb-4" id="hist-kpis">
-        <div class="col-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-label">CA période</div>
-                <div class="stat-value" id="hist-ca">—</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-label">Transactions</div>
-                <div class="stat-value" id="hist-nb">—</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-label">Ticket moyen</div>
-                <div class="stat-value" id="hist-moy">—</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-label">Mode dominant</div>
-                <div class="stat-value" id="hist-mode-dom">—</div>
-            </div>
-        </div>
-    </div>
+                            {{-- Header ticket --}}
+                            <div class="ticket-header mb-3">
+                                <div class="th-left">
+                                    <div class="th-num" id="ticket-numero">—</div>
+                                    <div class="th-info" id="ticket-info">—</div>
+                                </div>
+                                <div class="th-right">
+                                    <div class="th-total" id="ticket-total">0 F</div>
+                                    <div class="th-count" id="ticket-items-count">0 article(s)</div>
+                                </div>
+                            </div>
 
-    {{-- Table historique --}}
-    <div class="card">
-        <div class="card-header d-flex align-items-center justify-content-between py-3 px-4">
-            <span class="fw-bold">
-                <i class="bi bi-list-ul me-2"></i>Transactions
-            </span>
-            <span class="text-muted" style="font-size:13px" id="hist-count-label">—</span>
-        </div>
-        <div class="card-body p-0">
-            <div id="hist-loading" class="text-center py-5">
-                <div class="spinner-border text-secondary"></div>
-                <div class="text-muted mt-2" style="font-size:13px">Chargement...</div>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-hover mb-0 d-none" id="hist-table">
-                    <thead>
-                        <tr>
-                            <th class="ps-4">Commande</th>
-                            <th>Client / Table</th>
-                            <th>Mode</th>
-                            <th class="text-end">Montant reçu</th>
-                            <th class="text-end">Total dû</th>
-                            <th class="text-end">Monnaie</th>
-                            <th>Caissier</th>
-                            <th>Heure</th>
-                            <th class="text-end pe-4">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="hist-tbody"></tbody>
-                </table>
-            </div>
-            <div id="hist-empty" class="empty-state d-none">
-                <i class="bi bi-receipt-cutoff"></i>
-                <h6>Aucune transaction</h6>
-                <p>Aucun encaissement sur cette période.</p>
-            </div>
-        </div>
-    </div>
-</div>
+                            {{-- Articles --}}
+                            <div class="ticket-items-wrap mb-3" id="ticket-items"></div>
 
-{{-- ══ MODAL SUCCÈS ══ --}}
-<div class="modal fade" id="successModal" tabindex="-1" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-body p-0">
-                <div class="success-layout">
+                            {{-- Sous-total / Remise / Frais livraison --}}
+                            <div id="ticket-remise-wrap" style="display:none">
+                                <div class="d-flex justify-content-between mb-1"
+                                    style="font-size:13px;color:#9299a8">
+                                    <span>Remise</span>
+                                    <span id="ticket-remise-val" class="text-danger">—</span>
+                                </div>
+                            </div>
+                            <div id="ticket-livraison-wrap" style="display:none">
+                                <div class="d-flex justify-content-between mb-1"
+                                    style="font-size:13px;color:#9299a8">
+                                    <span><i class="bi bi-bicycle me-1"></i>Frais de livraison</span>
+                                    <span id="ticket-livraison-val" style="color:#0d9fd8">—</span>
+                                </div>
+                            </div>
 
-                    {{-- Gauche : succès --}}
-                    <div class="success-left">
-                        <div class="success-check">✓</div>
-                        <h4 class="fw-bold mb-1">Paiement réussi !</h4>
-                        <div class="text-muted mb-1" id="success-num" style="font-size:14px">—</div>
-                        <div class="success-total" id="success-total">—</div>
-                        <div id="success-monnaie" class="mt-2"></div>
-                        <div class="success-mode mt-2" id="success-mode"></div>
+                            <hr class="my-3">
 
-                        <div class="d-flex gap-2 mt-4 flex-wrap justify-content-center">
-                            <button class="btn btn-outline-light btn-sm px-3"
-                                onclick="imprimerTicket()">
-                                <i class="bi bi-printer me-1"></i>Imprimer
-                            </button>
-                            <button class="btn btn-light btn-sm px-3"
-                                onclick="fermerSuccess()">
-                                <i class="bi bi-arrow-right me-1"></i>Suivant
+                            {{-- Mode de paiement --}}
+                            <div class="mb-3">
+                                <div class="section-label mb-2">Mode de paiement</div>
+                                <div class="row g-2">
+                                    <div class="col-4">
+                                        <div class="pay-btn active" data-mode="especes"
+                                            onclick="selectMode('especes', this)">
+                                            <i class="bi bi-cash"></i>
+                                            <div>Espèces</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="pay-btn" data-mode="mobile_money"
+                                            onclick="selectMode('mobile_money', this)">
+                                            <i class="bi bi-phone"></i>
+                                            <div>Mobile Money</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="pay-btn" data-mode="carte"
+                                            onclick="selectMode('carte', this)">
+                                            <i class="bi bi-credit-card"></i>
+                                            <div>Carte</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Référence --}}
+                            <div id="ref-wrap" class="mb-3" style="display:none">
+                                <div class="section-label mb-1">Référence transaction</div>
+                                <input type="text" id="ref-input" class="form-control"
+                                    placeholder="N° transaction, code de confirmation...">
+                            </div>
+
+                            {{-- Montant reçu --}}
+                            <div class="mb-3">
+                                <div class="section-label mb-1">Montant reçu</div>
+                                <div class="input-group input-group-lg">
+                                    <input type="number" id="montant-recu"
+                                        class="form-control montant-input"
+                                        placeholder="0"
+                                        oninput="calculerMonnaie()">
+                                    <span class="input-group-text fw-bold">{{ $monnaie }}</span>
+                                </div>
+                            </div>
+
+                            {{-- Raccourcis --}}
+                            <div class="row g-2 mb-3" id="shortcuts"></div>
+
+                            {{-- Monnaie --}}
+                            <div id="monnaie-box" class="monnaie-box mb-3" style="display:none">
+                                <div class="monnaie-label">MONNAIE À RENDRE</div>
+                                <div class="monnaie-val" id="monnaie-rendue">0 F</div>
+                            </div>
+
+                            {{-- Bouton encaisser --}}
+                            <button class="btn-encaisser-full" id="btn-encaisser"
+                                onclick="encaisser()" disabled>
+                                <span id="enc-txt">
+                                    <i class="bi bi-check-circle me-2"></i>Encaisser
+                                </span>
+                                <div class="enc-spinner d-none" id="enc-spin"></div>
                             </button>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                    {{-- Droite : ticket détaillé --}}
-                    <div class="success-right" id="success-ticket-detail">
-                        {{-- Rempli par JS --}}
+    {{-- ══════════════════════════════════════
+        ONGLET HISTORIQUE
+    ══════════════════════════════════════ --}}
+    <div id="tab-historique" style="display:none">
+
+        {{-- Filtres --}}
+        <div class="filtre-bar mb-4">
+            <div class="row g-2 align-items-end">
+                <div class="col-6 col-md-2">
+                    <label class="form-label fw-500 mb-1" style="font-size:11px;text-transform:uppercase;color:#9299a8">Du</label>
+                    <input type="date" id="hist-debut" class="form-control form-control-sm"
+                        value="{{ today()->format('Y-m-d') }}">
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label fw-500 mb-1" style="font-size:11px;text-transform:uppercase;color:#9299a8">Au</label>
+                    <input type="date" id="hist-fin" class="form-control form-control-sm"
+                        value="{{ today()->format('Y-m-d') }}">
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label fw-500 mb-1" style="font-size:11px;text-transform:uppercase;color:#9299a8">Mode</label>
+                    <select id="hist-mode" class="form-select form-select-sm">
+                        <option value="">Tous</option>
+                        <option value="especes">Espèces</option>
+                        <option value="mobile_money">Mobile Money</option>
+                        <option value="carte">Carte</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-auto">
+                    <label class="form-label mb-1 d-block" style="font-size:11px;color:transparent">.</label>
+                    <div class="d-flex gap-1">
+                        @foreach(['today'=>"Auj.",'week'=>'Semaine','month'=>'Mois'] as $p => $l)
+                        <button class="btn btn-sm btn-outline-secondary period-btn {{ $p==='today'?'active':'' }}"
+                            data-period="{{ $p }}" onclick="setPeriodHist('{{ $p }}', this)">
+                            {{ $l }}
+                        </button>
+                        @endforeach
+                    </div>
+                </div>
+                <div class="col-md-auto ms-md-auto">
+                    <label class="form-label mb-1 d-block" style="font-size:11px;color:transparent">.</label>
+                    <button class="btn btn-dark btn-sm px-4" onclick="chargerHistorique()">
+                        <i class="bi bi-funnel me-1"></i>Filtrer
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {{-- KPIs historique --}}
+        <div class="row g-3 mb-4" id="hist-kpis">
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-label">CA période</div>
+                    <div class="stat-value" id="hist-ca">—</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-label">Transactions</div>
+                    <div class="stat-value" id="hist-nb">—</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-label">Ticket moyen</div>
+                    <div class="stat-value" id="hist-moy">—</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-label">Mode dominant</div>
+                    <div class="stat-value" id="hist-mode-dom">—</div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Table historique --}}
+        <div class="card">
+            <div class="card-header d-flex align-items-center justify-content-between py-3 px-4">
+                <span class="fw-bold">
+                    <i class="bi bi-list-ul me-2"></i>Transactions
+                </span>
+                <span class="text-muted" style="font-size:13px" id="hist-count-label">—</span>
+            </div>
+            <div class="card-body p-0">
+                <div id="hist-loading" class="text-center py-5">
+                    <div class="spinner-border text-secondary"></div>
+                    <div class="text-muted mt-2" style="font-size:13px">Chargement...</div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 d-none" id="hist-table">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Commande</th>
+                                <th>Client / Table</th>
+                                <th>Mode</th>
+                                <th class="text-end">Montant reçu</th>
+                                <th class="text-end">Total dû</th>
+                                <th class="text-end">Monnaie</th>
+                                <th>Caissier</th>
+                                <th>Heure</th>
+                                <th class="text-end pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hist-tbody"></tbody>
+                    </table>
+                </div>
+                <div id="hist-empty" class="empty-state d-none">
+                    <i class="bi bi-receipt-cutoff"></i>
+                    <h6>Aucune transaction</h6>
+                    <p>Aucun encaissement sur cette période.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- ══ MODAL SUCCÈS ══ --}}
+    <div class="modal fade" id="successModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-body p-0">
+                    <div class="success-layout">
+
+                        {{-- Gauche : succès --}}
+                        <div class="success-left">
+                            <div class="success-check">✓</div>
+                            <h4 class="fw-bold mb-1">Paiement réussi !</h4>
+                            <div class="text-muted mb-1" id="success-num" style="font-size:14px">—</div>
+                            <div class="success-total" id="success-total">—</div>
+                            <div id="success-monnaie" class="mt-2"></div>
+                            <div class="success-mode mt-2" id="success-mode"></div>
+
+                            <div class="d-flex gap-2 mt-4 flex-wrap justify-content-center">
+                                <button class="btn btn-outline-light btn-sm px-3"
+                                    onclick="imprimerTicket()">
+                                    <i class="bi bi-printer me-1"></i>Imprimer
+                                </button>
+                                <button class="btn btn-light btn-sm px-3"
+                                    onclick="fermerSuccess()">
+                                    <i class="bi bi-arrow-right me-1"></i>Suivant
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Droite : ticket détaillé --}}
+                        <div class="success-right" id="success-ticket-detail">
+                            {{-- Rempli par JS --}}
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-{{-- ══ MODAL DÉTAIL PAIEMENT ══ --}}
-<div class="modal fade" id="detailPaiementModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header border-0">
-                <h5 class="modal-title fw-bold">
-                    <i class="bi bi-receipt me-2"></i>Détail du paiement
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="detail-paiement-body">
-                <div class="text-center py-4">
-                    <div class="spinner-border text-secondary"></div>
+    {{-- ══ MODAL DÉTAIL PAIEMENT ══ --}}
+    <div class="modal fade" id="detailPaiementModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-receipt me-2"></i>Détail du paiement
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-            </div>
-            <div class="modal-footer border-0">
-                <button class="btn btn-outline-dark" onclick="imprimerDepuisDetail()">
-                    <i class="bi bi-printer me-1"></i>Imprimer la quittance
-                </button>
-                <button class="btn btn-light" data-bs-dismiss="modal">Fermer</button>
+                <div class="modal-body" id="detail-paiement-body">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-secondary"></div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button class="btn btn-outline-dark" onclick="imprimerDepuisDetail()">
+                        <i class="bi bi-printer me-1"></i>Imprimer la quittance
+                    </button>
+                    <button class="btn btn-light" data-bs-dismiss="modal">Fermer</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
 @endsection
 
@@ -703,6 +710,11 @@
             return Number.isFinite(n) ? n : 0;
         }
 
+        // ── AJOUT : détecte si une commande a des frais de livraison à afficher ──
+        function hasFraisLivraison(cmd) {
+            return cmd && cmd.type === 'livraison' && num(cmd.frais_livraison) > 0;
+        }
+
         // ══════════════════════════════════════════════════════
         // ONGLETS
         // ══════════════════════════════════════════════════════
@@ -717,17 +729,9 @@
         // ══════════════════════════════════════════════════════
         // CAISSE — COMMANDES PRÊTES EN TEMPS RÉEL (AJAX polling)
         // ══════════════════════════════════════════════════════
-        // IDs actuellement affichés, initialisés depuis le rendu serveur
         let currentPretesIds = new Set(@json($commandes_pretes->pluck('id')));
 
-        // Rafraîchissement complet (liste) toutes les 5s, sans recharger la page.
-        // N'écrit dans le DOM que si la liste a réellement changé (évite le flicker
-        // et préserve la sélection en cours de la caissière).
         setInterval(actualiserCommandesPretes, 5000);
-
-        // Rafraîchissement léger du texte "il y a X min" toutes les 15s, indépendant
-        // du rafraîchissement complet ci-dessus : le temps écoulé avance donc en
-        // continu même si aucune commande n'a été ajoutée ou retirée.
         setInterval(rafraichirTempsEcoule, 15000);
         rafraichirTempsEcoule();
 
@@ -754,8 +758,6 @@
             return `il y a ${Math.floor(diffH / 24)} j`;
         }
 
-        // Met à jour uniquement les libellés "il y a X min" déjà présents dans le DOM,
-        // sans reconstruire la liste (pas de flicker, sélection préservée).
         function rafraichirTempsEcoule() {
             document.querySelectorAll('.prete-time').forEach(el => {
                 const val = el.dataset.preteAt;
@@ -779,7 +781,6 @@
         function renderCommandesPretes(cmds) {
             const newIds = new Set(cmds.map(c => c.id));
 
-            // Rien de nouveau et rien de retiré : on ne touche pas au DOM
             const inchangee = newIds.size === currentPretesIds.size
                 && [...newIds].every(id => currentPretesIds.has(id));
             if (inchangee) return;
@@ -811,7 +812,7 @@
                         <div class="flex-grow-1 min-w-0">
                             <div class="fw-bold" style="font-size:14px">${cmd.numero}</div>
                             <div style="font-size:12px;color:#9299a8">
-                                ${cmd.table ? 'Table ' + cmd.table.numero : 'Emporter'}
+                                ${cmd.table ? 'Table ' + cmd.table.numero : (cmd.type === 'livraison' ? 'Livraison' : 'Emporter')}
                                 · ${cmd.items_count ?? (cmd.items ? cmd.items.length : 0)} article(s)
                                 ${cmd.client ? ' · ' + cmd.client.nom : ''}
                             </div>
@@ -831,7 +832,6 @@
                     </div>
                 </div>`).join('');
 
-            // Ré-appliquer le highlight de sélection si la commande est toujours là
             if (selectedCmd && newIds.has(selectedCmd.id)) {
                 document.getElementById(`prete-${selectedCmd.id}`)?.classList.add('active');
             }
@@ -865,9 +865,10 @@
 
                 document.getElementById('ticket-numero').textContent = cmd.numero;
                 document.getElementById('ticket-info').textContent   =
-                    (cmd.table ? 'Table ' + cmd.table.numero : 'Emporter') +
+                    (cmd.table ? 'Table ' + cmd.table.numero : (cmd.type === 'livraison' ? 'Livraison' : 'Emporter')) +
                     ' · ' + cmd.items.length + ' article(s)' +
-                    (cmd.client ? ' · ' + cmd.client.nom : '');
+                    (cmd.client ? ' · ' + cmd.client.nom : '') +
+                    (cmd.type === 'livraison' && cmd.livreur ? ' · ' + cmd.livreur.name : '');
                 document.getElementById('ticket-total').textContent  =
                     num(cmd.total).toLocaleString('fr') + ' ' + MONNAIE;
                 document.getElementById('ticket-items-count').textContent =
@@ -902,6 +903,15 @@
                         '-' + num(cmd.remise).toLocaleString('fr') + ' ' + MONNAIE;
                 } else {
                     document.getElementById('ticket-remise-wrap').style.display = 'none';
+                }
+
+                // ── AJOUT : Frais de livraison ──
+                if (hasFraisLivraison(cmd)) {
+                    document.getElementById('ticket-livraison-wrap').style.display = '';
+                    document.getElementById('ticket-livraison-val').textContent =
+                        '+' + num(cmd.frais_livraison).toLocaleString('fr') + ' ' + MONNAIE;
+                } else {
+                    document.getElementById('ticket-livraison-wrap').style.display = 'none';
                 }
 
                 buildShortcuts(cmd.total);
@@ -1004,7 +1014,8 @@
                 </div>
                 ${cmd.table
                     ? `<div class="tp-line"><span>Table</span><span>${cmd.table.numero}</span></div>`
-                    : `<div class="tp-line"><span>Type</span><span>Emporter</span></div>`}
+                    : `<div class="tp-line"><span>Type</span><span>${cmd.type === 'livraison' ? 'Livraison' : 'Emporter'}</span></div>`}
+                ${cmd.type === 'livraison' && cmd.livreur ? `<div class="tp-line"><span>Livreur</span><span>${cmd.livreur.name}</span></div>` : ''}
                 ${cmd.client ? `<div class="tp-line"><span>Client</span><span>${cmd.client.nom}</span></div>` : ''}
                 <div class="tp-line">
                     <span>Date</span>
@@ -1023,6 +1034,11 @@
                 <div class="tp-line">
                     <span>Remise</span>
                     <span>-${num(cmd.remise).toLocaleString('fr')} ${MONNAIE}</span>
+                </div>` : ''}
+                ${hasFraisLivraison(cmd) ? `
+                <div class="tp-line">
+                    <span>Frais de livraison</span>
+                    <span>+${num(cmd.frais_livraison).toLocaleString('fr')} ${MONNAIE}</span>
                 </div>` : ''}
                 <div class="tp-total">
                     <span>TOTAL À PAYER</span>
@@ -1183,6 +1199,8 @@
                     <span style="font-weight:700">${d.commande_num}</span>
                 </div>
                 ${d.table ? `<div class="tp-line"><span>Table</span><span>${d.table}</span></div>` : ''}
+                ${d.type === 'livraison' ? `<div class="tp-line"><span>Type</span><span>Livraison</span></div>` : ''}
+                ${d.livreur ? `<div class="tp-line"><span>Livreur</span><span>${d.livreur}</span></div>` : ''}
                 ${d.client ? `<div class="tp-line"><span>Client</span><span>${d.client}</span></div>` : ''}
                 <div class="tp-line">
                     <span>Date</span>
@@ -1197,9 +1215,21 @@
                     color:#9299a8;margin-bottom:6px">Articles</div>
                 ${items}
                 <div class="tp-sep"></div>
+                ${num(d.remise) > 0 ? `
+                <div class="tp-line">
+                    <span>Remise</span>
+                    <span>-${num(d.remise).toLocaleString('fr')} ${MONNAIE}</span>
+                </div>` : ''}
+                ${d.type === 'livraison' && num(d.frais_livraison) > 0 ? `
+                <div class="tp-line">
+                    <span>Frais de livraison</span>
+                    <span>+${num(d.frais_livraison).toLocaleString('fr')} ${MONNAIE}</span>
+                </div>` : ''}
                 <div class="tp-total">
                     <span>TOTAL</span>
-                    <span style="color:#c9a96e">${num(d.total).toLocaleString('fr')} ${MONNAIE}</span>
+                    <span style="color:#c9a96e">
+                        ${num(Number(d.total || 0) + Number(d.frais_livraison || 0)).toLocaleString('fr')} ${MONNAIE}
+                    </span>
                 </div>
                 <div class="tp-line" style="margin-top:4px">
                     <span>Mode paiement</span>
@@ -1212,7 +1242,7 @@
                 ${num(d.monnaie_rendue) > 0 ? `
                 <div class="tp-line" style="color:#198754;font-weight:700">
                     <span>Monnaie rendue</span>
-                    <span>${num(d.monnaie_rendue).toLocaleString('fr')} ${MONNAIE}</span>
+                    <span>${num(Number(d.monnaie_rendue|| 0) - Number(d.frais_livraison || 0)).toLocaleString('fr')} ${MONNAIE}</span>
                 </div>` : ''}
                 <div class="tp-sep"></div>
                 <div class="tp-center" style="font-size:12px;color:#6b7280;margin-top:6px">
@@ -1238,8 +1268,6 @@
 
         function _imprimer(innerHTML, titre = '') {
             if (!innerHTML) { toastr.warning('Aucun ticket disponible.'); return; }
-            // toolbar/location/menubar/status = no : masque la barre d'adresse et le
-            // cadre du navigateur dans la fenêtre d'impression
             const win = window.open('', '_blank',
                 'width=380,height=650,toolbar=no,location=no,menubar=no,status=no,scrollbars=yes,resizable=yes');
             win.document.write(`<!DOCTYPE html><html><head>
@@ -1333,7 +1361,7 @@
                             <div class="fw-bold" style="font-size:13px">${p.commande?.numero ?? '—'}</div>
                         </td>
                         <td>
-                            <div style="font-size:13px">${p.commande?.table ? 'Table '+p.commande.table.numero : 'Emporter'}</div>
+                            <div style="font-size:13px">${p.commande?.table ? 'Table '+p.commande.table.numero : (p.commande?.type === 'livraison' ? 'Livraison' : 'Emporter')}</div>
                             <div style="font-size:11px;color:#9299a8">${p.commande?.client?.nom ?? '—'}</div>
                         </td>
                         <td>
@@ -1343,9 +1371,11 @@
                             ${p.reference ? `<div style="font-size:10px;color:#9299a8">${p.reference}</div>` : ''}
                         </td>
                         <td class="text-end fw-bold">${num(p.montant_recu).toLocaleString('fr')} ${MONNAIE}</td>
-                        <td class="text-end fw-bold" style="color:#c9a96e">${num(p.montant_du).toLocaleString('fr')} ${MONNAIE}</td>
-                        <td class="text-end" style="color:${num(p.monnaie_rendue) > 0 ? '#198754' : '#9299a8'}">
-                            ${num(p.monnaie_rendue) > 0 ? num(p.monnaie_rendue).toLocaleString('fr')+' '+MONNAIE : '—'}
+                        <td class="text-end fw-bold" style="color:#c9a96e">
+                            ${num(Number(p.montant_du || 0) + Number(p.commande?.frais_livraison || 0)).toLocaleString('fr')} ${MONNAIE}
+                        </td>
+                        <td class="text-end" style="color:${num(p.monnaie_rendue - p.commande.frais_livraison ) > 0 ? '#198754' : '#9299a8'}">
+                            ${num(p.monnaie_rendue) > 0 ? num(p.monnaie_rendue - p.commande.frais_livraison).toLocaleString('fr')+' '+MONNAIE : '—'}
                         </td>
                         <td style="font-size:12px">${p.caissier?.name ?? '—'}</td>
                         <td style="font-size:12px;color:#9299a8">
@@ -1385,7 +1415,6 @@
             document.getElementById('hist-nb').textContent  = nb;
             document.getElementById('hist-moy').textContent = num(moy).toLocaleString('fr') + ' ' + MONNAIE;
 
-            // Mode dominant
             if (paiements.length > 0) {
                 const modes = {};
                 paiements.forEach(p => { modes[p.mode] = (modes[p.mode] ?? 0) + 1; });
@@ -1421,7 +1450,11 @@
                     mode:           p.mode,
                     montant_recu:   p.montant_recu,
                     table:          p.commande.table?.numero,
+                    type:           p.commande.type,
+                    livreur:        p.commande.livreur?.name,
                     client:         p.commande.client?.nom,
+                    remise:         p.commande.remise,
+                    frais_livraison:p.commande.frais_livraison,
                     items:          (p.commande.items ?? []).map(i => ({
                         nom:           i.produit.nom,
                         quantite:      i.quantite,
@@ -1450,13 +1483,23 @@
                                         <span class="fw-bold">${p.commande.numero}</span>
                                     </div>
                                     <div class="d-flex justify-content-between" style="font-size:13px">
-                                        <span class="text-muted">Table</span>
-                                        <span>${p.commande.table ? 'Table '+p.commande.table.numero : 'Emporter'}</span>
+                                        <span class="text-muted">Table / Type</span>
+                                        <span>${p.commande.table ? 'Table '+p.commande.table.numero : (p.commande.type === 'livraison' ? 'Livraison' : 'Emporter')}</span>
                                     </div>
+                                    ${p.commande.type === 'livraison' && p.commande.livreur ? `
+                                    <div class="d-flex justify-content-between" style="font-size:13px">
+                                        <span class="text-muted">Livreur</span>
+                                        <span>${p.commande.livreur.name}</span>
+                                    </div>` : ''}
                                     <div class="d-flex justify-content-between" style="font-size:13px">
                                         <span class="text-muted">Client</span>
                                         <span>${p.commande.client?.nom ?? '—'}</span>
                                     </div>
+                                    ${p.commande.type === 'livraison' && num(p.commande.frais_livraison) > 0 ? `
+                                    <div class="d-flex justify-content-between" style="font-size:13px">
+                                        <span class="text-muted">Frais de livraison</span>
+                                        <span style="color:#0d9fd8;font-weight:600">+${num(p.commande.frais_livraison).toLocaleString('fr')} ${MONNAIE}</span>
+                                    </div>` : ''}
                                     <div class="d-flex justify-content-between" style="font-size:13px">
                                         <span class="text-muted">Mode</span>
                                         <span class="mode-badge ${modeCls[p.mode] ?? ''}">${modeLabels[p.mode] ?? p.mode}</span>
@@ -1468,7 +1511,7 @@
                                     ${num(p.monnaie_rendue) > 0 ? `
                                     <div class="d-flex justify-content-between" style="font-size:13px">
                                         <span class="text-muted">Monnaie rendue</span>
-                                        <span class="fw-bold text-success">${num(p.monnaie_rendue).toLocaleString('fr')} ${MONNAIE}</span>
+                                        <span class="fw-bold text-success">${num(p.monnaie_rendue - p.commande.frais_livraison).toLocaleString('fr')} ${MONNAIE}</span>
                                     </div>` : ''}
                                     ${p.reference ? `
                                     <div class="d-flex justify-content-between" style="font-size:13px">
@@ -1499,7 +1542,6 @@
         }
 
         function imprimerPaiement(id) {
-            // Charger et imprimer directement
             fetch(`/caisse/historique/${id}`, {
                 headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
             })
@@ -1512,7 +1554,11 @@
                     mode:           p.mode,
                     montant_recu:   p.montant_recu,
                     table:          p.commande.table?.numero,
+                    type:           p.commande.type,
+                    livreur:        p.commande.livreur?.name,
                     client:         p.commande.client?.nom,
+                    remise:         p.commande.remise,
+                    frais_livraison:p.commande.frais_livraison,
                     items:          (p.commande.items ?? []).map(i => ({
                         nom:           i.produit.nom,
                         quantite:      i.quantite,

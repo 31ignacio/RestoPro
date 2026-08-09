@@ -424,7 +424,7 @@
 <body>
 
 {{-- ══════════════════════════════════
-     SIDEBAR
+    SIDEBAR
 ══════════════════════════════════ --}}
 <div class="sidebar-overlay" id="sidebar-overlay"></div>
 

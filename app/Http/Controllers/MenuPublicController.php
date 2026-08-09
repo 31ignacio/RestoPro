@@ -255,113 +255,113 @@ class MenuPublicController extends Controller
     //     }
     // }
 
-  public function modifierCommande(Request $request, string $numero)
-{
-    $commande = Commande::where('numero', $numero)->firstOrFail();
+    public function modifierCommande(Request $request, string $numero)
+    {
+        $commande = Commande::where('numero', $numero)->firstOrFail();
 
-    $data = $request->validate([
-        'mode'                => 'required|in:modifier,ajouter',
-        'items'               => 'required|array|min:1',
-        'items.*.produit_id'  => 'required|exists:produits,id',
-        'items.*.quantite'    => 'required|numeric|min:0.5',
-        'items.*.notes'       => 'nullable|string|max:255',
-    ]);
+        $data = $request->validate([
+            'mode'                => 'required|in:modifier,ajouter',
+            'items'               => 'required|array|min:1',
+            'items.*.produit_id'  => 'required|exists:produits,id',
+            'items.*.quantite'    => 'required|numeric|min:0.5',
+            'items.*.notes'       => 'nullable|string|max:255',
+        ]);
 
-    if ($data['mode'] === 'modifier') {
-        // ── ÉDITION : uniquement tant que la commande est modifiable ──
-        if (!in_array($commande->statut, ['en_attente', 'en_cuisson'], true)) {
-            return response()->json([
-                'success' => false,
-                'bloquee' => true,
-                'message' => 'Cette commande ne peut plus être modifiée.',
-            ], 409);
-        }
-
-        $statutCourant = $commande->statut;
-        $payload = collect($data['items'])->keyBy('produit_id');
-
-        // On ne touche QUE les lignes dans le statut courant de la commande
-        // (par sécurité, au cas où des lignes à d'autres statuts existeraient)
-        $lignesEditables = $commande->items()->where('statut', $statutCourant)->get();
-
-        // Suppression des lignes retirées par l'utilisateur
-        foreach ($lignesEditables as $ligne) {
-            if (!$payload->has($ligne->produit_id)) {
-                $ligne->delete();
+        if ($data['mode'] === 'modifier') {
+            // ── ÉDITION : uniquement tant que la commande est modifiable ──
+            if (!in_array($commande->statut, ['en_attente', 'en_cuisson'], true)) {
+                return response()->json([
+                    'success' => false,
+                    'bloquee' => true,
+                    'message' => 'Cette commande ne peut plus être modifiée.',
+                ], 409);
             }
-        }
 
-        // Mise à jour / création
-        foreach ($payload as $produitId => $item) {
-            $ligne = $commande->items()
-                ->where('produit_id', $produitId)
-                ->where('statut', $statutCourant)
-                ->first();
+            $statutCourant = $commande->statut;
+            $payload = collect($data['items'])->keyBy('produit_id');
 
-            $produit = Produit::findOrFail($produitId);
+            // On ne touche QUE les lignes dans le statut courant de la commande
+            // (par sécurité, au cas où des lignes à d'autres statuts existeraient)
+            $lignesEditables = $commande->items()->where('statut', $statutCourant)->get();
 
-            if ($ligne) {
-                $ligne->update([
-                    'quantite'      => $item['quantite'],
-                    'prix_unitaire' => $produit->prix,
-                    'sous_total'    => $produit->prix * $item['quantite'],
-                    'notes'         => $item['notes'] ?? null,
-                ]);
-            } else {
+            // Suppression des lignes retirées par l'utilisateur
+            foreach ($lignesEditables as $ligne) {
+                if (!$payload->has($ligne->produit_id)) {
+                    $ligne->delete();
+                }
+            }
+
+            // Mise à jour / création
+            foreach ($payload as $produitId => $item) {
+                $ligne = $commande->items()
+                    ->where('produit_id', $produitId)
+                    ->where('statut', $statutCourant)
+                    ->first();
+
+                $produit = Produit::findOrFail($produitId);
+
+                if ($ligne) {
+                    $ligne->update([
+                        'quantite'      => $item['quantite'],
+                        'prix_unitaire' => $produit->prix,
+                        'sous_total'    => $produit->prix * $item['quantite'],
+                        'notes'         => $item['notes'] ?? null,
+                    ]);
+                } else {
+                    $commande->items()->create([
+                        'produit_id'    => $produit->id,
+                        'quantite'      => $item['quantite'],
+                        'prix_unitaire' => $produit->prix,
+                        'sous_total'    => $produit->prix * $item['quantite'],
+                        'notes'         => $item['notes'] ?? null,
+                        'statut'        => $statutCourant,
+                    ]);
+                }
+            }
+
+        } else {
+            // ── AJOUT DE COMPLÉMENT : uniquement une fois la commande "prête" ──
+            if ($commande->statut !== 'prete') {
+                return response()->json([
+                    'success' => false,
+                    'bloquee' => true,
+                    'message' => 'L\'ajout de plats est disponible une fois la commande prête.',
+                ], 409);
+            }
+
+            // On NE touche PAS aux articles déjà là : ils gardent leur statut "prete"
+            foreach ($data['items'] as $item) {
+                $produit = Produit::findOrFail($item['produit_id']);
                 $commande->items()->create([
                     'produit_id'    => $produit->id,
                     'quantite'      => $item['quantite'],
                     'prix_unitaire' => $produit->prix,
                     'sous_total'    => $produit->prix * $item['quantite'],
                     'notes'         => $item['notes'] ?? null,
-                    'statut'        => $statutCourant,
+                    'statut'        => 'en_attente',
                 ]);
             }
-        }
 
-    } else {
-        // ── AJOUT DE COMPLÉMENT : uniquement une fois la commande "prête" ──
-        if ($commande->statut !== 'prete') {
-            return response()->json([
-                'success' => false,
-                'bloquee' => true,
-                'message' => 'L\'ajout de plats est disponible une fois la commande prête.',
-            ], 409);
-        }
-
-        // On NE touche PAS aux articles déjà là : ils gardent leur statut "prete"
-        foreach ($data['items'] as $item) {
-            $produit = Produit::findOrFail($item['produit_id']);
-            $commande->items()->create([
-                'produit_id'    => $produit->id,
-                'quantite'      => $item['quantite'],
-                'prix_unitaire' => $produit->prix,
-                'sous_total'    => $produit->prix * $item['quantite'],
-                'notes'         => $item['notes'] ?? null,
-                'statut'        => 'en_attente',
+            // Renvoi automatique en cuisine
+            $commande->update([
+                'statut'             => 'en_attente',
+                'prise_en_charge_at' => null,
+                'prete_at'           => null,
             ]);
         }
 
-        // Renvoi automatique en cuisine
+        $commande->refresh();
         $commande->update([
-            'statut'             => 'en_attente',
-            'prise_en_charge_at' => null,
-            'prete_at'           => null,
+            'total' => $commande->items->sum('sous_total'),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => $data['mode'] === 'ajouter'
+                ? 'Complément envoyé en cuisine.'
+                : 'Commande modifiée.',
         ]);
     }
-
-    $commande->refresh();
-    $commande->update([
-        'total' => $commande->items->sum('sous_total'),
-    ]);
-
-    return response()->json([
-        'success' => true,
-        'message' => $data['mode'] === 'ajouter'
-            ? 'Complément envoyé en cuisine.'
-            : 'Commande modifiée.',
-    ]);
-}
     // ✅ Polling statut des commandes d'une table
     public function statutCommandes(string $uuid)
     {

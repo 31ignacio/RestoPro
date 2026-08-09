@@ -251,34 +251,34 @@ class CommandeController extends Controller
     }
     // Supprimer un article
    public function removeItem(Commande $commande, CommandeItem $item)
-{
-    // Un article n'est supprimable QUE tant qu'il n'a jamais quitté
-    // 'en_attente' — dès qu'il a été envoyé en cuisine (statut synchronisé
-    // vers en_cuisson au moment de l'envoi), il est figé définitivement,
-    // que ce soit un article de la commande initiale ou d'un complément.
-    if ($item->statut !== 'en_attente') {
-        return response()->json([
-            'success' => false,
-            'bloquee' => true,
-            'message' => 'Cet article a déjà été transmis en cuisine et ne peut plus être retiré.',
-        ], 422);
-    }
+    {
+        // Un article n'est supprimable QUE tant qu'il n'a jamais quitté
+        // 'en_attente' — dès qu'il a été envoyé en cuisine (statut synchronisé
+        // vers en_cuisson au moment de l'envoi), il est figé définitivement,
+        // que ce soit un article de la commande initiale ou d'un complément.
+        if ($item->statut !== 'en_attente') {
+            return response()->json([
+                'success' => false,
+                'bloquee' => true,
+                'message' => 'Cet article a déjà été transmis en cuisine et ne peut plus être retiré.',
+            ], 422);
+        }
 
-    // Sécurité supplémentaire : la commande elle-même doit être en_attente
-    // (sinon incohérence — normalement déjà garanti par le check ci-dessus)
-    if ($commande->statut !== 'en_attente') {
-        return response()->json([
-            'success' => false,
-            'bloquee' => true,
-            'message' => 'Cette commande ne peut plus être modifiée à ce stade.',
-        ], 422);
-    }
+        // Sécurité supplémentaire : la commande elle-même doit être en_attente
+        // (sinon incohérence — normalement déjà garanti par le check ci-dessus)
+        if ($commande->statut !== 'en_attente') {
+            return response()->json([
+                'success' => false,
+                'bloquee' => true,
+                'message' => 'Cette commande ne peut plus être modifiée à ce stade.',
+            ], 422);
+        }
 
-    $item->delete();
-    $commande->calculerTotal();
-    $this->notifierModificationCuisine($commande);
-    return response()->json(['success' => true, 'message' => 'Article retiré.', 'total' => $commande->total]);
-}
+        $item->delete();
+        $commande->calculerTotal();
+        $this->notifierModificationCuisine($commande);
+        return response()->json(['success' => true, 'message' => 'Article retiré.', 'total' => $commande->total]);
+    }
 
     private function notifierModificationCuisine(Commande $commande): void
     {

@@ -6,16 +6,16 @@
 @section('content')
 
 {{-- ══ EN-TÊTE ══ --}}
-<div class="d-flex align-items-center justify-content-between mb-4">
+<div class="cmd-page-header mb-4">
     <div>
-        <h5 class="mb-0 fw-bold">Commandes du jour</h5>
-        <small class="text-muted d-inline-flex align-items-center gap-2 mt-1">
+        <h5 class="cmd-page-title">Commandes du jour</h5>
+        <div class="cmd-page-sub">
             <span class="live-dot-mini" title="Actualisation automatique"></span>
             <span id="subtitle-count">{{ $commandes->total() }} commande(s)</span>
-        </small>
+        </div>
     </div>
-    <a href="{{ route('commandes.create') }}" class="btn btn-dark px-4">
-        <i class="bi bi-plus-lg me-2"></i>Nouvelle commande
+    <a href="{{ route('commandes.create') }}" class="btn-new-cmd">
+        <i class="bi bi-plus-lg"></i>Nouvelle commande
     </a>
 </div>
 
@@ -24,7 +24,7 @@
     @php
         $kpis = [
             ['key'=>'en_attente', 'label'=>'En attente', 'count'=>$commandes->getCollection()->where('statut','en_attente')->count(), 'accent'=>'#c9a96e','icon'=>'hourglass-split'],
-            ['key'=>'en_cuisson', 'label'=>'En cuisson', 'count'=>$commandes->getCollection()->where('statut','en_cuisson')->count(), 'accent'=>'#8a94a6','icon'=>'fire'],
+            ['key'=>'en_cuisson', 'label'=>'En cuisson', 'count'=>$commandes->getCollection()->where('statut','en_cuisson')->count(), 'accent'=>'#6b9fd4','icon'=>'fire'],
             ['key'=>'prete',      'label'=>'Prêtes',     'count'=>$commandes->getCollection()->where('statut','prete')->count(),      'accent'=>'#5f9c76','icon'=>'check-circle'],
             ['key'=>'payee',      'label'=>'Payées',     'count'=>$commandes->getCollection()->where('statut','payee')->count(),      'accent'=>'#212529','icon'=>'wallet'],
         ];
@@ -32,15 +32,13 @@
     @foreach($kpis as $kpi)
     <div class="col-6 col-md-3">
         <div class="kpi-card">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <div class="kpi-label">{{ $kpi['label'] }}</div>
-                    <div class="kpi-value" id="kpi-value-{{ $kpi['key'] }}">{{ $kpi['count'] }}</div>
-                </div>
-                <div class="kpi-icon" style="color:{{ $kpi['accent'] }};background:{{ $kpi['accent'] }}17">
+            <div class="kpi-top">
+                <div class="kpi-icon" style="color:{{ $kpi['accent'] }};background:{{ $kpi['accent'] }}16">
                     <i class="bi bi-{{ $kpi['icon'] }}"></i>
                 </div>
             </div>
+            <div class="kpi-value" id="kpi-value-{{ $kpi['key'] }}">{{ $kpi['count'] }}</div>
+            <div class="kpi-label">{{ $kpi['label'] }}</div>
             <div class="kpi-bar" style="background:{{ $kpi['accent'] }}"></div>
         </div>
     </div>
@@ -51,19 +49,19 @@
 <div class="card filter-card mb-4">
     <div class="card-body">
 
-        {{-- Ligne 1 : Statut (pleine largeur) --}}
-        <div class="filter-block">
+        {{-- Ligne 1 : Statut --}}
+        <div class="filter-block mb-0">
             <span class="filter-label">Statut</span>
             <div class="d-flex gap-2 flex-wrap" id="statut-btns">
                 @foreach([
-                    'tous'       => ['Toutes',     '#6c757d'],
-                    'en_attente' => ['En attente', '#856404'],
-                    'en_cuisson' => ['En cuisson', '#055160'],
-                    'prete'      => ['Prête ✓',    '#0a3622'],
-                    'servie'     => ['Servie',     '#084298'],
-                    'payee'      => ['Payée',      '#fff'],
-                    'annulee'    => ['Annulée',    '#842029'],
-                ] as $s => [$label, $tc])
+                    'tous'       => 'Toutes',
+                    'en_attente' => 'En attente',
+                    'en_cuisson' => 'En cuisson',
+                    'prete'      => 'Prête ✓',
+                    'servie'     => 'Servie',
+                    'payee'      => 'Payée',
+                    'annulee'    => 'Annulée',
+                ] as $s => $label)
                 <button class="filter-statut-btn {{ $s === 'tous' ? 'active' : '' }}"
                     data-statut="{{ $s }}"
                     onclick="setStatut('{{ $s }}', this)">
@@ -75,12 +73,12 @@
 
         <hr class="filter-sep">
 
-        {{-- Ligne 2 : Période rapide / dates / recherche / bouton — tous alignés --}}
-        <div class="d-flex flex-wrap align-items-end gap-3">
+        {{-- Ligne 2 : Période / dates / recherche / bouton ── grille alignée ── --}}
+        <div class="filter-row-2">
 
-            <div class="filter-block">
+            <div class="filter-block filter-period">
                 <span class="filter-label">Période rapide</span>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 flex-wrap">
                     @foreach([
                         'today'   => "Aujourd'hui",
                         'week'    => 'Semaine',
@@ -96,19 +94,19 @@
                 </div>
             </div>
 
-            <div class="filter-block">
+            <div class="filter-block filter-date">
                 <span class="filter-label">Du</span>
                 <input type="date" id="date-debut" class="form-control form-control-sm date-input"
                     value="{{ today()->format('Y-m-d') }}">
             </div>
 
-            <div class="filter-block">
+            <div class="filter-block filter-date">
                 <span class="filter-label">Au</span>
                 <input type="date" id="date-fin" class="form-control form-control-sm date-input"
                     value="{{ today()->format('Y-m-d') }}">
             </div>
 
-            <div class="filter-block flex-grow-1" style="min-width:180px;max-width:260px">
+            <div class="filter-block filter-search">
                 <span class="filter-label">Recherche</span>
                 <div class="input-group input-group-sm search-group">
                     <span class="input-group-text bg-white border-end-0">
@@ -121,10 +119,10 @@
                 </div>
             </div>
 
-            <div class="filter-block ms-md-auto">
-                <span class="filter-label" style="color:transparent">.</span>
-                <button class="btn btn-dark btn-sm px-4" onclick="appliquerFiltres()">
-                    <i class="bi bi-funnel me-1"></i>Filtrer
+            <div class="filter-block filter-submit">
+                <span class="filter-label filter-label-ghost">Filtrer</span>
+                <button class="btn-apply-filter" onclick="appliquerFiltres()">
+                    <i class="bi bi-funnel"></i>Filtrer
                 </button>
             </div>
 
@@ -133,7 +131,7 @@
 </div>
 
 {{-- ══ TABLEAU ══ --}}
-<div class="card">
+<div class="card table-card">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover mb-0" id="cmds-table">
@@ -158,7 +156,7 @@
                         data-date="{{ $cmd->created_at->format('Y-m-d') }}">
 
                         <td class="ps-4">
-                            <div class="fw-bold" style="font-size:13px">{{ $cmd->numero }}</div>
+                            <div class="cell-primary">{{ $cmd->numero }}</div>
                             <small class="text-muted">
                                 {{ $cmd->type === 'sur_place' ? 'Sur place' : ($cmd->type === 'emporter' ? 'Emporter' : 'Livraison') }}
                             </small>
@@ -176,26 +174,24 @@
                             @endif
                         </td>
 
-                        <td style="font-size:12px;color:#6b7280">
+                        <td class="cell-muted">
                             {{ $cmd->client?->nom ?? '—' }}
                         </td>
 
                         <td>
-                            <div class="d-flex align-items-center gap-2">
+                            <div class="serveur-cell">
                                 <div class="serveur-avatar">
                                     {{ strtoupper(substr($cmd->serveur->name, 0, 2)) }}
                                 </div>
-                                <span style="font-size:12px">{{ Str::limit($cmd->serveur->name, 12) }}</span>
+                                <span class="serveur-nom">{{ Str::limit($cmd->serveur->name, 12) }}</span>
                             </div>
                         </td>
 
                         <td class="text-center">
-                            <span class="badge bg-light border text-dark" style="font-size:11px">
-                                {{ $cmd->items->count() }}
-                            </span>
+                            <span class="qty-badge">{{ $cmd->items->count() }}</span>
                         </td>
 
-                        <td class="text-end fw-bold" style="color:#c9a96e;font-size:14px">
+                        <td class="text-end cell-total">
                             {{ number_format($cmd->total, 0, ',', ' ') }} F
                         </td>
 
@@ -215,8 +211,8 @@
                         </td>
 
                         <td>
-                            <div style="font-size:13px;font-weight:500">{{ $cmd->created_at->format('H:i') }}</div>
-                            <small class="text-muted" style="font-size:11px">
+                            <div class="cell-time">{{ $cmd->created_at->format('H:i') }}</div>
+                            <small class="text-muted cell-time-rel">
                                 {{ $cmd->created_at->diffForHumans() }}
                             </small>
                         </td>
@@ -233,16 +229,11 @@
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 @endif
-                                @if($cmd->statut === 'prete')
-                                <a href="{{ route('caisse.index') }}"
-                                    class="action-btn success" title="Encaisser">
-                                    <i class="bi bi-currency-exchange me-1"></i>
-                                </a>
-                                @endif
-                                @if(!in_array($cmd->statut, ['payee','annulee','prete','en_attente ']))
+
+                                @if(!in_array($cmd->statut, ['payee','annulee','en_cuisson','prete']))
                                 <button type="button" class="action-btn danger js-cmd-annuler"
                                     data-cmd-id="{{ $cmd->id }}" data-cmd-num="{{ $cmd->numero }}"
-                                    title="Annuler">
+                                    title="Annulerfff">
                                     <i class="bi bi-x-circle"></i>
                                 </button>
                                 @endif
@@ -251,9 +242,11 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="9" class="text-center py-5 text-muted">
-                            <i class="bi bi-receipt d-block fs-1 mb-2 opacity-25"></i>
-                            Aucune commande aujourd'hui.
+                        <td colspan="9">
+                            <div class="empty-state">
+                                <i class="bi bi-receipt"></i>
+                                <span>Aucune commande aujourd'hui.</span>
+                            </div>
                         </td>
                     </tr>
                     @endforelse
@@ -262,15 +255,17 @@
         </div>
 
         {{-- Message aucun résultat filtre --}}
-        <div id="no-filter-result" class="text-center py-5 text-muted d-none">
-            <i class="bi bi-funnel d-block fs-1 mb-2 opacity-25"></i>
-            Aucune commande ne correspond aux filtres.
+        <div id="no-filter-result" class="d-none">
+            <div class="empty-state">
+                <i class="bi bi-funnel"></i>
+                <span>Aucune commande ne correspond aux filtres.</span>
+            </div>
         </div>
     </div>
 
     {{-- Pagination --}}
     @if($commandes->hasPages())
-    <div class="card-footer bg-white d-flex align-items-center justify-content-between px-4 py-3">
+    <div class="card-footer table-footer">
         <small class="text-muted">
             {{ $commandes->firstItem() }}–{{ $commandes->lastItem() }} sur {{ $commandes->total() }}
         </small>
@@ -303,40 +298,44 @@
 @endsection
 
 @push('styles')
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        * { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        :root {
+            --gold:   #c9a96e;
+            --ink:    #14141f;
+            --ink2:   #374151;
+            --muted:  #9299a8;
+            --border: #eef0f4;
+            --bg:     #f6f7fa;
+        }
+
         .fw-500 { font-weight: 500; }
 
-        /* ── KPI (modernisées : icônes teintées, radius plus doux) ── */
-        .kpi-card {
-            position: relative;
-            background: #fff;
-            border: 1px solid #eef0f3;
-            border-radius: 14px;
-            padding: 17px 20px 19px;
-            overflow: hidden;
-            transition: box-shadow .18s ease, transform .18s ease;
+        /* ── EN-TÊTE PAGE ── */
+        .cmd-page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
         }
-        .kpi-card:hover { box-shadow: 0 10px 26px rgba(20,20,30,.07); transform: translateY(-2px); }
-        .kpi-label {
-            font-size: 11px; font-weight: 600;
-            color: #9299a8; text-transform: uppercase;
-            letter-spacing: .05em; margin-bottom: 5px;
+        .cmd-page-title {
+            font-size: 19px;
+            font-weight: 800;
+            color: var(--ink);
+            margin: 0 0 5px;
+            letter-spacing: -.3px;
         }
-        .kpi-value {
-            font-size: 27px; font-weight: 700; color: #1a1a2e; line-height: 1;
-            transition: color .3s;
+        .cmd-page-sub {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12.5px;
+            color: var(--muted);
+            font-weight: 500;
         }
-        .kpi-icon {
-            width: 40px; height: 40px; border-radius: 11px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 18px; flex-shrink: 0;
-        }
-        .kpi-bar {
-            position: absolute; left: 0; bottom: 0;
-            width: 100%; height: 3px; opacity: .5;
-        }
-
-        /* ── Indicateur "actualisation automatique" ── */
         .live-dot-mini {
             width: 7px; height: 7px; border-radius: 50%;
             background: #198754; flex-shrink: 0;
@@ -344,77 +343,198 @@
         }
         @keyframes liveBlink { 0%,100%{opacity:1} 50%{opacity:.25} }
 
-        /* ── CARTE FILTRES ── */
-        .filter-card { border: 1px solid #eef0f3; border-radius: 14px; }
-        .filter-card .card-body { padding: 20px 22px; }
-        .filter-block { display: flex; flex-direction: column; gap: 7px; }
-        .filter-label {
-            font-size: 11px; font-weight: 600;
-            color: #9299a8; text-transform: uppercase;
+        .btn-new-cmd {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            padding: 11px 22px;
+            border-radius: 12px;
+            border: none;
+            background: var(--ink);
+            color: #fff;
+            font-size: 13.5px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all .2s;
+            box-shadow: 0 4px 14px rgba(20,20,31,.18);
+        }
+        .btn-new-cmd:hover {
+            background: #000;
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 22px rgba(20,20,31,.26);
+        }
+
+        /* ── KPI ── */
+        .kpi-card {
+            position: relative;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px 22px 22px;
+            overflow: hidden;
+            box-shadow: 0 1px 2px rgba(20,20,31,.04), 0 6px 18px rgba(20,20,31,.05);
+            transition: box-shadow .2s ease, transform .2s ease;
+        }
+        .kpi-card:hover { box-shadow: 0 4px 10px rgba(20,20,31,.06), 0 14px 32px rgba(20,20,31,.08); transform: translateY(-2px); }
+        .kpi-top { margin-bottom: 14px; }
+        .kpi-icon {
+            width: 42px; height: 42px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; flex-shrink: 0;
+        }
+        .kpi-value {
+            font-size: 27px; font-weight: 800; color: var(--ink); line-height: 1;
+            margin-bottom: 6px; letter-spacing: -.5px; font-variant-numeric: tabular-nums;
+        }
+        .kpi-label {
+            font-size: 11.5px; font-weight: 600;
+            color: var(--muted); text-transform: uppercase;
             letter-spacing: .05em;
         }
-        .filter-sep { border: none; border-top: 1px solid #f0f0f4; margin: 18px 0; }
+        .kpi-bar {
+            position: absolute; left: 0; bottom: 0;
+            width: 100%; height: 3px; opacity: .55;
+        }
 
-        .date-input { width: 142px; }
+        /* ── CARTE FILTRES ── */
+        .filter-card { border: 1px solid var(--border); border-radius: 16px; }
+        .filter-card .card-body { padding: 22px 24px; }
+        .filter-block { display: flex; flex-direction: column; gap: 8px; }
+        .filter-label {
+            font-size: 10.5px; font-weight: 700;
+            color: var(--muted); text-transform: uppercase;
+            letter-spacing: .06em;
+        }
+        .filter-label-ghost { color: transparent; user-select: none; }
+        .filter-sep { border: none; border-top: 1px solid #f0f0f4; margin: 20px 0; }
+
+        /* Grille de filtres — alignement propre en une seule ligne sur desktop */
+        .filter-row-2 {
+            display: grid;
+            grid-template-columns: auto 142px 142px minmax(200px, 1fr) auto;
+            gap: 18px;
+            align-items: end;
+        }
+        .filter-period  { min-width: 0; }
+        .filter-date     { min-width: 0; }
+        .filter-search   { min-width: 0; }
+        .filter-submit   { min-width: 0; }
+
+        .date-input { width: 100%; }
         .search-group { width: 100%; }
-
-        /* Boutons statut : sobres, un seul état actif contrasté */
-        .filter-statut-btn {
-            padding: 5px 14px; border-radius: 20px;
-            border: 1px solid #e8e9ee; background: #fbfbfc;
-            font-size: 12.5px; font-weight: 500; color: #6b7280;
-            cursor: pointer; transition: all .15s; white-space: nowrap;
+        .search-group .form-control,
+        .search-group .input-group-text {
+            border-color: #e2e4ea;
         }
-        .filter-statut-btn:hover { border-color: #c9a96e; color: #a9834a; background: #fff; }
-        .filter-statut-btn.active {
-            background: #212529; border-color: #212529; color: #fff;
+        .search-group .form-control:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(201,169,110,.12);
         }
 
-        /* Boutons période : même gabarit que statut, plus discrets */
-        .period-btn {
-            padding: 5px 14px; border-radius: 20px;
+        /* Boutons statut / période — même gabarit, cohérents */
+        .filter-statut-btn, .period-btn {
+            padding: 6px 15px; border-radius: 20px;
             border: 1px solid #e8e9ee; background: #fbfbfc;
-            font-size: 12.5px; font-weight: 500; color: #6b7280;
+            font-size: 12.5px; font-weight: 600; color: #6b7280;
             cursor: pointer; transition: all .15s; white-space: nowrap;
         }
-        .period-btn:hover { border-color: #9299a8; color: #1a1a2e; background: #fff; }
-        .period-btn.active { background: #f0f0f5; border-color: #c9a96e; color: #1a1a2e; }
+        .filter-statut-btn:hover { border-color: var(--gold); color: #a9834a; background: #fff; }
+        .filter-statut-btn.active { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+        .period-btn:hover { border-color: #9299a8; color: var(--ink); background: #fff; }
+        .period-btn.active { background: #f4f0e8; border-color: var(--gold); color: #8a6d3b; }
+
+        .btn-apply-filter {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 22px;
+            border-radius: 10px;
+            border: none;
+            background: var(--ink);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all .18s;
+            height: 32px;
+        }
+        .btn-apply-filter:hover { background: #000; transform: translateY(-1px); }
 
         /* ── TABLE ── */
-        .table-responsive { border-radius: 14px; overflow: hidden; }
+        .table-card { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: 0 1px 2px rgba(20,20,31,.04), 0 6px 18px rgba(20,20,31,.05); }
+        .table-responsive { overflow-x: auto; }
+        #cmds-table thead th {
+            padding: 12px 16px;
+            font-size: 10.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--muted);
+            background: #fbfbfd;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        #cmds-table tbody td {
+            padding: 14px 16px;
+            font-size: 13px;
+            color: var(--ink2);
+            vertical-align: middle;
+            border-bottom: 1px solid #f2f3f6;
+        }
+        #cmds-table tbody tr:last-child td { border-bottom: none; }
         #cmds-table tbody tr { transition: background-color .15s; }
         #cmds-table tbody tr:hover { background-color: #fafafa; }
+
+        .cell-primary { font-weight: 700; font-size: 13px; color: var(--ink); }
+        .cell-muted   { font-size: 12.5px; color: #6b7280; }
+        .cell-total   { font-weight: 800; color: var(--gold); font-size: 14px; font-variant-numeric: tabular-nums; }
+        .cell-time    { font-size: 13px; font-weight: 600; color: var(--ink2); }
+        .cell-time-rel{ font-size: 11px; }
+
         .table-badge {
             display: inline-flex; align-items: center;
-            padding: 3px 10px; border-radius: 6px;
-            font-size: 12px; font-weight: 600;
+            padding: 4px 11px; border-radius: 7px;
+            font-size: 12px; font-weight: 700;
             background: #f5f5f8; color: #374151;
         }
         .table-badge.emporter {
-            background: #fbfbfc; color: #9299a8; border: 1px solid #eef0f3;
+            background: #fbfbfc; color: var(--muted); border: 1px solid var(--border);
         }
+
+        .serveur-cell { display: flex; align-items: center; gap: 9px; }
         .serveur-avatar {
-            width: 26px; height: 26px; border-radius: 6px;
+            width: 27px; height: 27px; border-radius: 7px;
             background: #eeeef3; color: #374151;
             display: flex; align-items: center; justify-content: center;
-            font-size: 10px; font-weight: 700; flex-shrink: 0;
+            font-size: 10px; font-weight: 800; flex-shrink: 0;
         }
+        .serveur-nom { font-size: 12.5px; font-weight: 500; }
+
+        .qty-badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            min-width: 24px; height: 22px; padding: 0 7px;
+            border-radius: 7px; background: var(--bg); border: 1px solid var(--border);
+            font-size: 11px; font-weight: 700; color: var(--ink2);
+        }
+
         .statut-badge {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: 4px 11px 4px 9px;
-            border-radius: 20px; font-size: 11px; font-weight: 600;
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 5px 12px 5px 10px;
+            border-radius: 20px; font-size: 11px; font-weight: 700;
             transition: background-color .3s, color .3s;
         }
-        .statut-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .7; flex-shrink: 0; }
+        .statut-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .8; flex-shrink: 0; }
         .badge-en_attente { background:#fff3cd; color:#856404; }
-        .badge-en_cuisson { background:#cff4fc; color:#055160; }
-        .badge-prete      { background:#d1e7dd; color:#0a3622; }
-        .badge-servie     { background:#cfe2ff; color:#084298; }
-        .badge-payee      { background:#212529; color:#fff; }
-        .badge-annulee    { background:#f8d7da; color:#842029; }
+        .badge-en_cuisson { background:#e0f0fb; color:#0c5e88; }
+        .badge-prete      { background:#d9f2e3; color:#0a7a45; }
+        .badge-servie     { background:#dbe8fe; color:#1d4ed8; }
+        .badge-payee      { background:var(--ink); color:#fff; }
+        .badge-annulee    { background:#fbdfe1; color:#b91c2c; }
 
-        /* Mise en avant discrète d'une ligne nouvelle ou fraîchement mise à jour,
-           le temps d'un court fondu — sans jamais déplacer ni bloquer l'interface. */
         @keyframes rowFlash {
             0%   { background-color: rgba(201,169,110,.16); }
             100% { background-color: transparent; }
@@ -423,41 +543,69 @@
 
         /* ── ACTIONS ── */
         .action-btn {
-            width: 30px; height: 30px;
-            border-radius: 8px; border: 1px solid #eef0f3;
+            width: 31px; height: 31px;
+            border-radius: 9px; border: 1px solid var(--border);
             background: #fff; display: inline-flex;
             align-items: center; justify-content: center;
             font-size: 13px; color: #6b7280; cursor: pointer;
-            transition: all .14s; text-decoration: none;
+            transition: all .15s; text-decoration: none;
         }
-        .action-btn:hover { background: #f5f5f7; color: #1a1a2e; border-color: #d0d0d8; transform: translateY(-1px); }
-        .action-btn.success { color: #198754; border-color: #d1e7dd; }
-        .action-btn.success:hover { background: #d1e7dd; }
-        .action-btn.danger  { color: #dc3545; border-color: #f8d7da; }
-        .action-btn.danger:hover  { background: #f8d7da; }
+        .action-btn:hover { background: #f5f5f7; color: var(--ink); border-color: #d0d0d8; transform: translateY(-1px); }
+        .action-btn.success { color: #198754; border-color: #cdeadb; }
+        .action-btn.success:hover { background: #d9f2e3; }
+        .action-btn.danger  { color: #dc3545; border-color: #f6d3d6; }
+        .action-btn.danger:hover  { background: #fbdfe1; }
+
+        /* ── ÉTAT VIDE ── */
+        .empty-state {
+            display: flex; flex-direction: column; align-items: center; gap: 12px;
+            padding: 56px 24px; color: var(--muted); text-align: center;
+        }
+        .empty-state i {
+            width: 56px; height: 56px; border-radius: 50%;
+            background: var(--bg); display: flex; align-items: center; justify-content: center;
+            font-size: 24px; opacity: .55;
+        }
+        .empty-state span { font-size: 13.5px; font-weight: 500; }
+
+        /* ── FOOTER TABLE / PAGINATION ── */
+        .table-footer {
+            background: #fff; border-top: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 24px; flex-wrap: wrap; gap: 10px;
+        }
+        .pagination { margin: 0; }
+        .page-link { font-size: 13px; color: var(--ink2); border-color: var(--border); }
+        .page-item.active .page-link { background: var(--ink); border-color: var(--ink); }
+
         /* ── MODAL DÉTAIL ── */
         .detail-info-box {
-            background: #f8f9fa; border-radius: 10px;
-            padding: 14px 16px;
+            background: #f8f9fa; border-radius: 12px;
+            padding: 15px 17px;
         }
         .detail-info-box .dib-label {
-            font-size: 10px; font-weight: 600;
-            color: #9299a8; text-transform: uppercase;
-            letter-spacing: .06em; margin-bottom: 4px;
+            font-size: 10px; font-weight: 700;
+            color: var(--muted); text-transform: uppercase;
+            letter-spacing: .06em; margin-bottom: 5px;
         }
         .detail-info-box .dib-value {
-            font-size: 14px; font-weight: 600; color: #1a1a2e;
+            font-size: 14px; font-weight: 700; color: var(--ink);
         }
 
-        /* ── PAGINATION ── */
-        .pagination { margin: 0; }
-        .page-link { font-size: 13px; color: #374151; border-color: #eef0f3; }
-        .page-item.active .page-link { background: #212529; border-color: #212529; }
-
         /* ── RESPONSIVE ── */
+        @media (max-width: 1199.98px) {
+            .filter-row-2 {
+                grid-template-columns: 1fr 1fr;
+                row-gap: 16px;
+            }
+            .filter-search { grid-column: 1 / -1; }
+            .filter-submit { grid-column: 1 / -1; }
+            .btn-apply-filter { width: 100%; }
+        }
         @media (max-width: 767.98px) {
-            .filter-block.ms-md-auto { margin-left: 0 !important; }
+            .filter-row-2 { grid-template-columns: 1fr; }
             .date-input { width: 100%; }
+            .cmd-page-header { align-items: flex-start; }
         }
     </style>
 @endpush
@@ -541,11 +689,6 @@
         }
 
         // ── MODAL DÉTAIL : initialisation PARESSEUSE ──────────
-        // On ne crée l'instance bootstrap.Modal qu'au moment où on en a
-        // besoin (au clic), jamais au chargement du script. Ça évite les
-        // erreurs silencieuses si ce <script> s'exécute avant que le
-        // bundle Bootstrap JS soit disponible, ou avant que le DOM du
-        // modal soit prêt.
         function getCmdDetailModal() {
             const el = document.getElementById('cmdDetailModal');
             if (!el) {
@@ -623,19 +766,26 @@
                         </td>
                     </tr>` : '';
 
+                // ── AJOUT : ligne frais de livraison (uniquement si type=livraison et montant > 0) ──
+                const fraisLivraisonRow = (d.type === 'livraison' && Number(d.frais_livraison) > 0) ? `
+                    <tr>
+                        <td colspan="3" class="text-end text-muted pe-3">
+                            <i class="bi bi-bicycle me-1"></i>Frais de livraison
+                        </td>
+                        <td class="text-end pe-3" style="color:#0d9fd8">
+                            +${Number(d.frais_livraison).toLocaleString('fr')} F
+                        </td>
+                    </tr>` : '';
+
                 const actionsHtml = (() => {
                     let btns = '';
-                    if (!['payee','annulee'].includes(d.statut)) {
+                    if (!['payee','annulee','en_cuisson'].includes(d.statut)) {
                         btns += `<a href="/commandes/${d.id}" class="btn btn-outline-dark flex-fill">
                             <i class="bi bi-pencil me-1"></i>Modifier
                         </a>`;
                     }
-                    if (d.statut === 'prete') {
-                        btns += `<a href="/caisse" class="btn btn-success flex-fill">
-                            <i class="bi bi-cash-register me-1"></i>Encaisser
-                        </a>`;
-                    }
-                    if (!['payee','annulee'].includes(d.statut)) {
+
+                    if (!['payee','annulee','en_cuisson','prete'].includes(d.statut)) {
                         btns += `<button class="btn btn-outline-danger"
                             onclick="annulerCmdModal(${d.id},'${d.numero}')">
                             <i class="bi bi-x-circle me-1"></i>Annuler
@@ -644,7 +794,6 @@
                     return btns;
                 })();
 
-                // ── Bloc motif d'annulation (affiché uniquement si commande annulée) ──
                 const motifHtml = (d.statut === 'annulee' && d.motif_annulation) ? `
                     <div class="alert alert-danger d-flex gap-2 align-items-start mb-3">
                         <i class="bi bi-x-circle text-danger mt-1"></i>
@@ -658,7 +807,6 @@
 
                 document.getElementById('cmdDetailBody').innerHTML = `
 
-                    {{-- Infos principales --}}
                     <div class="row g-3 mb-4">
                         <div class="col-md-3">
                             <div class="detail-info-box">
@@ -670,8 +818,11 @@
                         <div class="col-md-3">
                             <div class="detail-info-box">
                                 <div class="dib-label">Table / Type</div>
-                                <div class="dib-value">${d.table ? 'Table ' + d.table.numero : 'Emporter'}</div>
-                                <small class="text-muted">${d.type.replace(/_/g,' ')}</small>
+                                <div class="dib-value">${d.table ? 'Table ' + d.table.numero : (d.type === 'livraison' ? 'Livraison' : 'Emporter')}</div>
+                                <small class="text-muted">
+                                    ${d.type.replace(/_/g,' ')}
+                                    ${d.type === 'livraison' && d.livreur ? ' · ' + d.livreur.name : ''}
+                                </small>
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -692,10 +843,8 @@
                         </div>
                     </div>
 
-                    {{-- Motif d'annulation --}}
                     ${motifHtml}
 
-                    {{-- Articles --}}
                     <div class="table-responsive mb-3">
                         <table class="table table-sm mb-0" style="border-radius:10px;overflow:hidden">
                             <thead style="background:#f8f9fa">
@@ -713,6 +862,7 @@
                                     <td class="text-end pe-3">${Number(d.sous_total).toLocaleString('fr')} F</td>
                                 </tr>
                                 ${remiseRow}
+                                ${fraisLivraisonRow}
                                 <tr>
                                     <td colspan="3" class="text-end fw-bold pe-3">TOTAL</td>
                                     <td class="text-end fw-bold pe-3" style="color:#c9a96e;font-size:15px">
@@ -723,14 +873,12 @@
                         </table>
                     </div>
 
-                    {{-- Notes --}}
                     ${d.notes ? `
                     <div class="alert alert-light border d-flex gap-2 align-items-start mb-3">
                         <i class="bi bi-chat-left-text text-muted mt-1"></i>
                         <span style="font-size:13px">${d.notes}</span>
                     </div>` : ''}
 
-                    {{-- Actions --}}
                     ${actionsHtml ? `<div class="d-flex gap-2 flex-wrap">${actionsHtml}</div>` : ''}
                 `;
             })
@@ -808,13 +956,11 @@
             .then(d => {
                 if (d.success) {
                     toastr.success(d.message);
-                    // Mettre à jour le badge statut dans la ligne
                     const row = document.getElementById(`cmd-row-${id}`);
                     if (row) {
                         row.dataset.statut = 'annulee';
                         row.querySelector('.statut-badge').outerHTML =
                             '<span class="statut-badge badge-annulee"><span class="statut-dot"></span>Annulée</span>';
-                        // Cacher les boutons d'action
                         row.querySelectorAll('.action-btn.danger, .action-btn.success, a[href*="show"]')
                             .forEach(el => el.remove());
                     }
@@ -825,8 +971,7 @@
             .catch(() => toastr.error('Erreur réseau.'));
         }
 
-        // ── DÉLÉGATION D'ÉVÉNEMENTS (remplace les onclick inline
-        //     pour les boutons "voir détail" / "annuler" du tableau) ──
+        // ── DÉLÉGATION D'ÉVÉNEMENTS ──
         document.getElementById('cmds-tbody').addEventListener('click', (e) => {
             const detailBtn = e.target.closest('.js-cmd-detail');
             if (detailBtn) {
@@ -843,14 +988,12 @@
         document.addEventListener('DOMContentLoaded', () => {
             const params = new URLSearchParams(window.location.search);
 
-            // Restaurer filtre statut
             const statut = params.get('statut');
             if (statut) {
                 const btn = document.querySelector(`[data-statut="${statut}"]`);
                 if (btn) setStatut(statut, btn);
             }
 
-            // Restaurer période active
             const debut = params.get('debut');
             const fin   = params.get('fin');
             const today = new Date().toISOString().split('T')[0];
@@ -861,7 +1004,6 @@
                 document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
             }
 
-            // Restaurer recherche
             const search = params.get('search');
             if (search) {
                 document.getElementById('search-cmd').value = search;
@@ -872,10 +1014,6 @@
 
         // ══════════════════════════════════════════════════════
         // ACTUALISATION AUTOMATIQUE SILENCIEUSE
-        // Récupère en tâche de fond les commandes de la période
-        // actuellement affichée et ne modifie QUE ce qui a changé
-        // (nouvelle commande, statut, total) — jamais de rechargement
-        // de page, jamais de saut de scroll, jamais de flash global.
         // ══════════════════════════════════════════════════════
         const STATUT_CONFIG = {
             en_attente: ['En attente', 'badge-en_attente'],
@@ -924,23 +1062,23 @@
             return `
             <tr id="cmd-row-${cmd.id}" data-statut="${cmd.statut}" data-search="${searchStr}" data-date="${dateStr}">
                 <td class="ps-4">
-                    <div class="fw-bold" style="font-size:13px">${cmd.numero}</div>
+                    <div class="cell-primary">${cmd.numero}</div>
                     <small class="text-muted">${typeLabel}</small>
                 </td>
                 <td>${tableHtml}</td>
-                <td style="font-size:12px;color:#6b7280">${cmd.client?.nom ?? '—'}</td>
+                <td class="cell-muted">${cmd.client?.nom ?? '—'}</td>
                 <td>
-                    <div class="d-flex align-items-center gap-2">
+                    <div class="serveur-cell">
                         <div class="serveur-avatar">${serveurInit}</div>
-                        <span style="font-size:12px">${serveurNom}</span>
+                        <span class="serveur-nom">${serveurNom}</span>
                     </div>
                 </td>
-                <td class="text-center"><span class="badge bg-light border text-dark" style="font-size:11px">${cmd.items_count ?? 0}</span></td>
-                <td class="text-end fw-bold" style="color:#c9a96e;font-size:14px">${Number(cmd.total).toLocaleString('fr')} F</td>
+                <td class="text-center"><span class="qty-badge">${cmd.items_count ?? 0}</span></td>
+                <td class="text-end cell-total">${Number(cmd.total).toLocaleString('fr')} F</td>
                 <td><span class="statut-badge ${sclass}"><span class="statut-dot"></span>${slabel}</span></td>
                 <td>
-                    <div style="font-size:13px;font-weight:500">${heure}</div>
-                    <small class="text-muted" style="font-size:11px">${heureRelativeCmd(cmd.created_at)}</small>
+                    <div class="cell-time">${heure}</div>
+                    <small class="text-muted cell-time-rel">${heureRelativeCmd(cmd.created_at)}</small>
                 </td>
                 <td class="text-end pe-4">
                     <div class="d-flex justify-content-end gap-1">${buildActionsHtmlCmd(cmd)}</div>
@@ -950,7 +1088,7 @@
 
         function flashRow(el) {
             el.classList.remove('row-flash');
-            void el.offsetWidth; // relance l'animation même si la classe était déjà présente
+            void el.offsetWidth;
             el.classList.add('row-flash');
         }
 
@@ -977,15 +1115,12 @@
                     const existing = document.getElementById(`cmd-row-${cmd.id}`);
 
                     if (!existing) {
-                        // Nouvelle commande : insérée en haut de liste, discrètement mise en avant
                         tbody.insertAdjacentHTML('afterbegin', buildRowCmd(cmd));
                         const el = document.getElementById(`cmd-row-${cmd.id}`);
                         if (el) flashRow(el);
                         return;
                     }
 
-                    // On ne touche au DOM que si quelque chose a réellement changé,
-                    // pour ne jamais interrompre une lecture ou une interaction en cours.
                     const totalActuel = Number(existing.querySelector('td:nth-child(6)')?.textContent.replace(/[^\d]/g, '')) || 0;
                     const aChange = existing.dataset.statut !== cmd.statut || totalActuel !== Math.round(Number(cmd.total));
 
@@ -998,15 +1133,12 @@
                     }
                 });
 
-                // Retirer le message "aucune commande" si des données sont désormais présentes
                 if (cmds.length > 0) {
                     tbody.querySelector('tr td[colspan]')?.closest('tr')?.remove();
                 }
 
-                // Ré-appliquer les filtres client (statut / recherche) après le patch
                 appliquerFiltresLocaux();
 
-                // Compteur d'en-tête + KPI, tous mis à jour en silence
                 document.getElementById('subtitle-count').textContent = `${cmds.length} commande(s)`;
                 Object.entries(kpiCounts).forEach(([k, v]) => {
                     const el = document.getElementById(`kpi-value-${k}`);
