@@ -21,7 +21,7 @@ class UserController extends Controller
             'name'     => 'required|string|max:150',
             'email'    => 'required|email|unique:users,email',
             'role_id'  => 'required|exists:roles,id',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => 'required|string|min:12|confirmed',
         ]);
 
         $data['password'] = Hash::make($data['password']);
@@ -52,7 +52,7 @@ class UserController extends Controller
 
         // Changer mot de passe si fourni
         if ($request->filled('password')) {
-            $request->validate(['password' => 'min:6|confirmed']);
+            $request->validate(['password' => 'string|min:12|confirmed']);
             $user->update(['password' => Hash::make($request->password)]);
         }
 

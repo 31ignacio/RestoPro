@@ -8,6 +8,8 @@ class ActifMiddleware {
     public function handle(Request $request, Closure $next): mixed {
         if (Auth::check() && !Auth::user()->actif) {
             Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
             return redirect()->route('login')
                 ->withErrors(['email' => 'Votre compte a été désactivé.']);
         }

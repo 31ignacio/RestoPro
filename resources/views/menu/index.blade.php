@@ -2,30 +2,30 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>{{ $restaurant['nom'] }} — Menu</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 <style>
 :root{
-  --bg:     #F4F4F2;
+  --bg:     #F7F3EB;
   --white:  #FFFFFF;
   --card:   #FFFFFF;
-  --border: #EAEAE8;
+  --border: #E9E1D5;
   --ink:    #111110;
   --ink2:   #6B6B69;
   --ink3:   #AEAEAC;
-  --pop:    #2B6CB0;   /* bleu sobre — 1 seule couleur d'accent */
-  --pop-lt: rgba(43,108,176,.08);
-  --pop-md: rgba(43,108,176,.18);
+  --pop:    #9A593A;
+  --pop-lt: rgba(154,89,58,.08);
+  --pop-md: rgba(154,89,58,.18);
   --sans:   'Inter',  system-ui, sans-serif;
   --head:   'Syne',   system-ui, sans-serif;
   --r: 14px; --r-sm: 9px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
-body{font-family:var(--sans);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;padding-bottom:110px;overflow-x:hidden}
+body{font-family:var(--sans);background:radial-gradient(ellipse at 5% 0%,rgba(204,155,99,.13),transparent 34%),radial-gradient(ellipse at 95% 45%,rgba(154,89,58,.055),transparent 32%),var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;padding-bottom:110px;overflow-x:hidden}
 
 /* ─── TICKER ─── */
 .ticker{background:var(--ink);overflow:hidden;white-space:nowrap;padding:8px 0}
@@ -700,6 +700,7 @@ function sendOrder(){
     document.getElementById('btn-spin').classList.add('d-none');
     btn.disabled=false;
     if(d.success){
+      try { localStorage.setItem('restopro-order-'+d.numero, d.edit_token); } catch (e) {}
       closeSheet();
       Object.keys(P).forEach(id=>{delete P[id];syncCard(id);});
       syncBar();

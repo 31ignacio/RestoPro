@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 use App\Models\{TableRestaurant, Categorie, Produit, Commande, CommandeItem, Parametre, Client};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class MenuPublicController extends Controller
 {
@@ -79,13 +81,13 @@ class MenuPublicController extends Controller
             'client_nom'         => 'required|string|max:100',
             'client_tel'         => 'nullable|string|max:20',
             'items'              => 'required|array|min:1',
-            'items.*.produit_id' => 'required|exists:produits,id',
-            'items.*.quantite'   => 'required|numeric|min:0',
+            'items.*.produit_id' => 'required|distinct|exists:produits,id',
+            'items.*.quantite'   => 'required|numeric|min:0.5|max:99',
             'items.*.notes'      => 'nullable|string|max:200',
             'notes'              => 'nullable|string|max:500',
         ]);
 
-        $table = TableRestaurant::where('uuid', $request->table_uuid)->firstOrFail();
+        $table = TableRestaurant::where('uuid', $request->table_uuid)->where('actif', true)->firstOrFail();
 
         DB::beginTransaction();
         try {
@@ -106,9 +108,11 @@ class MenuPublicController extends Controller
             )->first();
 
             if (!$serveur) {
+                DB::rollBack();
                 return response()->json(['success' => false, 'message' => 'Aucun serveur disponible.'], 500);
             }
 
+            $editToken = Str::random(64);
             $commande = Commande::create([
                 'numero'    => Commande::genererNumero(),
                 'table_id'  => $table->id,
@@ -117,11 +121,15 @@ class MenuPublicController extends Controller
                 'type'      => 'sur_place',
                 'statut'    => 'en_attente',
                 'notes'     => $request->notes,
+                'public_edit_token' => Hash::make($editToken),
             ]);
 
             $sousTotal = 0;
             foreach ($request->items as $item) {
-                $produit    = Produit::findOrFail($item['produit_id']);
+                $produit = Produit::whereKey($item['produit_id'])
+                    ->where('disponible', true)
+                    ->whereHas('categorie', fn ($query) => $query->where('actif', true))
+                    ->firstOrFail();
                 $ligne      = $item['quantite'] * $produit->prix;
                 $sousTotal += $ligne;
 
@@ -157,13 +165,15 @@ class MenuPublicController extends Controller
                 'success'    => true,
                 'message'    => 'Commande envoyée !',
                 'numero'     => $commande->numero,
+                'edit_token' => $editToken,
                 'total'      => $commande->total,
                 'suivi_url'  => route('menu.suivi_table', $table->uuid),
             ]);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            report($e);
+            return response()->json(['success' => false, 'message' => 'Impossible d’enregistrer la commande. Réessayez.'], 500);
         }
     }
 
@@ -261,11 +271,16 @@ class MenuPublicController extends Controller
 
         $data = $request->validate([
             'mode'                => 'required|in:modifier,ajouter',
+            'edit_token'          => 'required|string|size:64',
             'items'               => 'required|array|min:1',
-            'items.*.produit_id'  => 'required|exists:produits,id',
-            'items.*.quantite'    => 'required|numeric|min:0.5',
+            'items.*.produit_id'  => 'required|distinct|exists:produits,id',
+            'items.*.quantite'    => 'required|numeric|min:0.5|max:99',
             'items.*.notes'       => 'nullable|string|max:255',
         ]);
+
+        if (! $commande->public_edit_token || ! Hash::check($data['edit_token'], $commande->public_edit_token)) {
+            abort(403, 'Autorisation de modification invalide.');
+        }
 
         if ($data['mode'] === 'modifier') {
             // ── ÉDITION : uniquement tant que la commande est modifiable ──
@@ -298,7 +313,8 @@ class MenuPublicController extends Controller
                     ->where('statut', $statutCourant)
                     ->first();
 
-                $produit = Produit::findOrFail($produitId);
+                $produit = Produit::whereKey($produitId)->where('disponible', true)
+                    ->whereHas('categorie', fn ($query) => $query->where('actif', true))->firstOrFail();
 
                 if ($ligne) {
                     $ligne->update([
@@ -331,7 +347,8 @@ class MenuPublicController extends Controller
 
             // On NE touche PAS aux articles déjà là : ils gardent leur statut "prete"
             foreach ($data['items'] as $item) {
-                $produit = Produit::findOrFail($item['produit_id']);
+                $produit = Produit::whereKey($item['produit_id'])->where('disponible', true)
+                    ->whereHas('categorie', fn ($query) => $query->where('actif', true))->firstOrFail();
                 $commande->items()->create([
                     'produit_id'    => $produit->id,
                     'quantite'      => $item['quantite'],

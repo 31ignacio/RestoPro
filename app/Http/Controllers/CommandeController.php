@@ -57,13 +57,17 @@ class CommandeController extends Controller
     {
         $request->validate([
             'type'     => 'required|in:sur_place,emporter,livraison',
-            'table_id' => 'nullable|exists:tables_restaurant,id',
+            'table_id' => 'nullable|required_if:type,sur_place|exists:tables_restaurant,id',
+            'client_id' => 'nullable|exists:clients,id',
+            'cuisinier_id' => 'nullable|exists:users,id',
             'livreur_id' => 'nullable|exists:users,id',
-            'frais_livraison' => 'nullable|numeric|min:0',
+            'frais_livraison' => 'nullable|numeric|min:0|max:10000000',
+            'remise' => 'nullable|numeric|min:0|max:10000000',
+            'notes' => 'nullable|string|max:2000',
             'items'    => 'required|array|min:1',
-            'items.*.produit_id' => 'required|exists:produits,id',
-            'items.*.quantite'   => 'required|numeric|min:0.5',
-            'items.*.notes'      => 'nullable|string',
+            'items.*.produit_id' => 'required|distinct|exists:produits,id',
+            'items.*.quantite'   => 'required|numeric|min:0.5|max:99',
+            'items.*.notes'      => 'nullable|string|max:255',
         ]);
 
         DB::beginTransaction();
@@ -84,7 +88,8 @@ class CommandeController extends Controller
 
             $sousTotal = 0;
             foreach ($request->items as $item) {
-                $produit = Produit::findOrFail($item['produit_id']);
+                $produit = Produit::whereKey($item['produit_id'])->where('disponible', true)
+                    ->whereHas('categorie', fn ($query) => $query->where('actif', true))->firstOrFail();
                 $ligne   = $item['quantite'] * $produit->prix;
                 $sousTotal += $ligne;
 
@@ -129,9 +134,10 @@ class CommandeController extends Controller
                 'commande_id' => $commande->id,
             ]);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            report($e);
+            return response()->json(['success' => false, 'message' => 'Impossible d’enregistrer la commande. Réessayez.'], 500);
         }
     }
 

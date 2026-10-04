@@ -17,9 +17,9 @@ class Produit extends Model {
   public function getPhotoUrlAttribute(): string
 {
     if ($this->photo && file_exists(public_path('produits/' . $this->photo))) {
-        return asset('restopro/public/produits/' . $this->photo);
+        return asset('produits/' . $this->photo);
     }
-    return asset('restopro/public/images/no-photo.png');
+    return asset('images/no-photo.png');
 }
 }
 

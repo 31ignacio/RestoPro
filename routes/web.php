@@ -7,7 +7,7 @@ use App\Http\Controllers\ProduitController;
 // ── AUTH ───────────────────────────────────────────
 Route::middleware('guest')->group(function () {
     Route::get('/login',  [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])
@@ -20,8 +20,8 @@ Route::prefix('menu')->name('menu.')->group(function () {
     Route::get('table/{uuid}',           [App\Http\Controllers\MenuPublicController::class, 'index'])->name('index');
     Route::get('table/{uuid}/suivi',     [App\Http\Controllers\MenuPublicController::class, 'suiviTable'])->name('suivi_table');
     Route::get('table/{uuid}/statut',    [App\Http\Controllers\MenuPublicController::class, 'statutCommandes'])->name('statut');
-    Route::post('commander',             [App\Http\Controllers\MenuPublicController::class, 'commander'])->name('commander');
-    Route::put('commande/{numero}/modifier', [App\Http\Controllers\MenuPublicController::class, 'modifierCommande'])->name('modifier');
+    Route::post('commander',             [App\Http\Controllers\MenuPublicController::class, 'commander'])->middleware('throttle:10,1')->name('commander');
+    Route::put('commande/{numero}/modifier', [App\Http\Controllers\MenuPublicController::class, 'modifierCommande'])->middleware('throttle:20,1')->name('modifier');
     Route::get('commande/{numero}',      [App\Http\Controllers\MenuPublicController::class, 'suivi'])->name('suivi');
 });
 
@@ -58,9 +58,10 @@ Route::middleware(['auth', 'actif'])->group(function () {
         )->name('clients.search');
 
         // Route::resource('categories', App\Http\Controllers\CategorieController::class);
-        Route::resource('Recette',   App\Http\Controllers\ProduitController::class);
-        // routes/web.php ou api.php
-        Route::patch('Recette/{produit}/toggle', [ProduitController::class, 'toggleDisponible']);
+        Route::resource('produits', App\Http\Controllers\ProduitController::class);
+        Route::patch('produits/{produit}/toggle', [ProduitController::class, 'toggleDisponible'])->name('produits.toggle');
+        Route::resource('Recette', App\Http\Controllers\ProduitController::class)->parameters(['Recette' => 'produit']);
+        Route::patch('Recette/{produit}/toggle', [ProduitController::class, 'toggleDisponible'])->name('Recette.toggle');
         Route::resource('clients',    App\Http\Controllers\ClientController::class);
         Route::resource('depenses',   App\Http\Controllers\DepenseController::class);
 

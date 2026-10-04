@@ -62,7 +62,7 @@ private function storePhoto($file, ?string $oldFilename = null): string
         @unlink(public_path('produits/' . $oldFilename));
     }
 
-    $filename = uniqid('prod_') . '.' . $file->getClientOriginalExtension();
+    $filename = 'prod_' . \Illuminate\Support\Str::random(40) . '.' . $file->extension();
     $file->move(public_path('produits'), $filename);
 
     return $filename;

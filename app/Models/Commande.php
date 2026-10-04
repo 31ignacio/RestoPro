@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Commande extends Model
 {
-    protected $fillable = ['numero','table_id','client_id','user_id','cuisinier_id','livreur_id','frais_livraison','type','statut','sous_total','remise','total','notes','prise_en_charge_at','prete_at','motif_annulation'];
+    protected $fillable = ['numero','table_id','client_id','user_id','cuisinier_id','livreur_id','frais_livraison','type','statut','sous_total','remise','total','notes','prise_en_charge_at','prete_at','motif_annulation','public_edit_token'];
     protected $casts    = ['prise_en_charge_at' => 'datetime', 'prete_at' => 'datetime', 'frais_livraison' => 'decimal:2'];
 
     public function table()   { return $this->belongsTo(TableRestaurant::class, 'table_id'); }
@@ -46,8 +46,7 @@ class Commande extends Model
 
     public static function genererNumero(): string {
         $date = now()->format('Ymd');
-        $last = static::whereDate('created_at', today())->count() + 1;
-        return 'CMD-'.$date.'-'.str_pad($last, 4, '0', STR_PAD_LEFT);
+        return 'CMD-'.$date.'-'.strtoupper(\Illuminate\Support\Str::random(8));
     }
     
 }

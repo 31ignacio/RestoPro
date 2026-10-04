@@ -37,7 +37,7 @@ class ProfilController extends Controller
 
         $request->validate([
             'current_password'      => 'required',
-            'password'              => 'required|min:6|confirmed',
+            'password'              => 'required|string|min:12|confirmed',
             'password_confirmation' => 'required',
         ]);
 
@@ -48,6 +48,8 @@ class ProfilController extends Controller
                 'message' => 'Le mot de passe actuel est incorrect.',
             ], 422);
         }
+
+        Auth::logoutOtherDevices($request->current_password);
 
         $user->update([
             'password' => Hash::make($request->password),

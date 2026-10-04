@@ -21,13 +21,13 @@
         }
 
         :root {
-            --bg: #0a0c14;
-            --panel: #11141f;
-            --panel-2: #151827;
-            --border: #1f2436;
-            --gold: #c9a96e;
-            --gold-2: #e8c97a;
-            --gold-dim: #c9a96e33;
+            --bg: #111713;
+            --panel: #19211b;
+            --panel-2: #20291f;
+            --border: #344034;
+            --gold: #d3a66b;
+            --gold-2: #efd09a;
+            --gold-dim: #d3a66b33;
             --ink: #eef0f5;
             --dim: #6b7280;
             --error: #f87171;
@@ -41,7 +41,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: var(--bg);
+            background:
+                radial-gradient(ellipse at 12% 10%, rgba(211, 166, 107, .17), transparent 38%),
+                radial-gradient(ellipse at 88% 88%, rgba(105, 130, 92, .2), transparent 40%),
+                linear-gradient(145deg, #101612 0%, #19221b 52%, #111713 100%);
             font-family: var(--sans);
             padding: 20px;
             position: relative;
@@ -66,7 +69,7 @@
         .ambient span:nth-child(1) {
             width: 600px;
             height: 600px;
-            background: radial-gradient(circle, #c9a96e, transparent 70%);
+            background: radial-gradient(circle, #d3a66b, transparent 70%);
             top: -200px;
             left: -150px;
             animation: floatA 28s ease-in-out infinite alternate;
@@ -75,7 +78,7 @@
         .ambient span:nth-child(2) {
             width: 500px;
             height: 500px;
-            background: radial-gradient(circle, #6b4ecf, transparent 70%);
+            background: radial-gradient(circle, #718565, transparent 70%);
             bottom: -180px;
             right: -120px;
             animation: floatB 32s ease-in-out infinite alternate;
@@ -107,7 +110,7 @@
             z-index: 1;
             width: 100%;
             max-width: 480px;
-            background: rgba(17, 20, 31, 0.75);
+            background: rgba(25, 33, 27, 0.84);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border-radius: 40px;
@@ -270,7 +273,8 @@
             transition: color .25s, transform .25s;
         }
 
-        .field input {
+        .field input,
+        .field select {
             width: 100%;
             padding: 15px 48px 15px 46px;
             border-radius: 16px;
@@ -283,12 +287,14 @@
             transition: border-color .25s, box-shadow .25s, background .25s;
         }
 
-        .field input:hover {
+        .field input:hover,
+        .field select:hover {
             border-color: #2a3049;
             background: rgba(12, 15, 25, 0.8);
         }
 
-        .field input:focus {
+        .field input:focus,
+        .field select:focus {
             border-color: var(--gold);
             box-shadow: 0 0 0 4px var(--gold-dim);
             background: rgba(14, 18, 32, 0.9);
@@ -303,7 +309,16 @@
             color: #3a3f52;
         }
 
-        .field.has-error input {
+        .field select {
+            appearance: none;
+            cursor: pointer;
+        }
+
+        .field select:invalid { color: #8c928c; }
+        .field select option { color: #eef0f5; background: #19211b; }
+
+        .field.has-error input,
+        .field.has-error select {
             border-color: var(--error);
         }
 
@@ -524,7 +539,8 @@
                 font-size: 24px;
             }
 
-            .field input {
+            .field input,
+            .field select {
                 padding: 13px 44px 13px 42px;
             }
         }
@@ -606,11 +622,24 @@
             @csrf
 
             <div class="field">
-                <label for="email">Adresse email</label>
+                <label for="user_id">Nom</label>
                 <div class="field-inner">
-                    <i class="bi bi-envelope fi-ic"></i>
-                    <input type="email" id="email" name="email" placeholder="admin@restopro.com"
-                        value="{{ old('email') }}" autocomplete="email" required autofocus>
+                    <i class="bi bi-person-badge fi-ic"></i>
+                    <select id="user_id" name="user_id" required autofocus>
+                        <option value="">Choisissez votre nom</option>
+                        @foreach ($users as $user)
+                            <option value="{{ $user->id }}" data-role="{{ $user->role?->label }}" @selected((string) old('user_id') === (string) $user->id)>{{ $user->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="role-display">Votre rôle</label>
+                <div class="field-inner">
+                    <i class="bi bi-shield-lock fi-ic"></i>
+                    <input type="text" id="role-display" placeholder="Le rôle s’affichera ici"
+                        value="" readonly aria-live="polite" tabindex="-1">
                 </div>
             </div>
 
@@ -660,17 +689,16 @@
 
         // ── loader ──
         document.getElementById('login-form').addEventListener('submit', function(e) {
-            const emailField = document.getElementById('email');
+            const userField = document.getElementById('user_id');
             const pwdField = document.getElementById('pwd');
-            const email = emailField.value.trim();
             const pwd = pwdField.value;
 
-            if (!email || !pwd) {
+            if (!userField.value || !pwd) {
                 e.preventDefault();
-                [emailField, pwdField].forEach(f => {
+                [userField, pwdField].forEach(f => {
                     if (!f.value.trim()) {
                         f.closest('.field').classList.add('has-error');
-                        f.addEventListener('input', () => f.closest('.field').classList.remove(
+                        f.addEventListener(f.tagName === 'SELECT' ? 'change' : 'input', () => f.closest('.field').classList.remove(
                         'has-error'), {
                             once: true
                         });
@@ -694,8 +722,16 @@
             }, 8000);
         });
 
-        // ── enter sur email → focus pwd ──
-        document.getElementById('email').addEventListener('keydown', function(e) {
+        const userSelect = document.getElementById('user_id');
+        const roleDisplay = document.getElementById('role-display');
+        function displaySelectedRole() {
+            roleDisplay.value = userSelect.selectedOptions[0]?.dataset.role || '';
+        }
+        userSelect.addEventListener('change', displaySelectedRole);
+        displaySelectedRole();
+
+        // ── Entrée sur le nom → focus mot de passe ──
+        document.getElementById('user_id').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 document.getElementById('pwd').focus();

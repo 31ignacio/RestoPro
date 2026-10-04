@@ -2,21 +2,21 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>Suivi — {{ $restaurant['nom'] }}</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 <style>
 :root{
-  --bg:    #F4F4F2;
+  --bg:    #F7F3EB;
   --white: #FFFFFF;
-  --border:#EAEAE8;
+  --border:#E9E1D5;
   --ink:   #111110;
   --ink2:  #6B6B69;
   --ink3:  #AEAEAC;
-  --pop:   #2B6CB0;
-  --pop-lt:rgba(43,108,176,.09);
+  --pop:   #9A593A;
+  --pop-lt:rgba(154,89,58,.09);
   --green: #16A34A;
   --green-lt:#F0FDF4;
   --amber: #D97706;
@@ -28,7 +28,7 @@
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
-body{font-family:var(--sans);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;padding-bottom:40px;overflow-x:hidden}
+body{font-family:var(--sans);background:radial-gradient(ellipse at 5% 0%,rgba(204,155,99,.13),transparent 34%),radial-gradient(ellipse at 95% 45%,rgba(154,89,58,.055),transparent 32%),var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;padding-bottom:40px;overflow-x:hidden}
 
 /* ── TICKER ── */
 .ticker{background:var(--ink);overflow:hidden;white-space:nowrap;padding:8px 0}
@@ -860,6 +860,9 @@ function fmtQty(v){
 function fmtMoney(v){
   return Math.round(v).toLocaleString('fr')+' '+MON;
 }
+function escapeHtml(value){
+  return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]));
+}
 
 /* ══════════════════════════════════════
    POLLING — robuste, sans blocage
@@ -947,7 +950,7 @@ function updateCard(cmd){
       <div class="item-row">
         <div style="display:flex;align-items:center;flex:1;min-width:0">
           <span class="item-qty">${fmtQty(it.quantite)}×</span>
-          <span style="font-size:13px;color:var(--ink);flex:1">${it.nom}${verrouille?' <i class="bi bi-lock-fill item-lock"></i>':''}</span>
+          <span style="font-size:13px;color:var(--ink);flex:1">${escapeHtml(it.nom)}${verrouille?' <i class="bi bi-lock-fill item-lock"></i>':''}</span>
         </div>
         <span class="item-px">${fmtMoney(Number(it.sous_total))}</span>
       </div>`;
@@ -1239,6 +1242,8 @@ function updateTabBadge(){
 
 /* ── SAVE ── */
 function saveModif(){
+  const editToken=localStorage.getItem('restopro-order-'+MN);
+  if(!editToken){ toast('Seul l’appareil à l’origine de la commande peut la modifier.','amber'); return; }
   const ids=Object.keys(MP);
   if(!ids.length){ toast('Panier vide.','amber'); return; }
   const btn=document.getElementById('btn-save');
@@ -1248,7 +1253,7 @@ function saveModif(){
   fetch('/menu/commande/'+MN+'/modifier',{
     method:'PUT',
     headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':CSRF},
-    body:JSON.stringify({mode:MM,items:ids.map(id=>({produit_id:+id,quantite:MP[id].q,notes:''}))})
+    body:JSON.stringify({mode:MM,edit_token:editToken,items:ids.map(id=>({produit_id:+id,quantite:MP[id].q,notes:''}))})
   })
   .then(r=>r.json())
   .then(d=>{

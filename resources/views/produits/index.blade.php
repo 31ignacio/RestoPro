@@ -118,7 +118,7 @@
         <div class="col-6 col-md-4 col-xl-3">
             <div class="prod-grid-card {{ !$p->disponible ? 'unavailable' : '' }}" id="gi-{{ $p->id }}">
                 <div class="pgc-img-wrap">
-                    <img src="{{ asset('restopro/public/produits/' . $p->photo) }}" alt="{{ $p->nom }}" class="pgc-img" loading="lazy">
+                    <img src="{{ asset('produits/' . $p->photo) }}" alt="{{ $p->nom }}" class="pgc-img" loading="lazy">
                     <span class="pgc-cat-badge" style="background:{{ $p->categorie->couleur ?? '#6c757d' }}">
                         {{ $p->categorie->nom }}
                     </span>
@@ -197,7 +197,7 @@
         <div class="prod-row" id="li-{{ $p->id }}">
 
            <div class="prod-row-media">
-                <img src="{{ asset('restopro/public/produits/' . $p->photo) }}"
+                <img src="{{ asset('produits/' . $p->photo) }}"
                      alt="{{ $p->nom }}"
                      class="prod-row-thumb">
             
@@ -296,7 +296,7 @@
                             <div class="photo-upload-zone" id="photo-zone"
                                 onclick="document.getElementById('prod_photo').click()">
                                 <img id="prod_photo_preview"
-                                    src="{{  asset('restopro/public/produits/' . $p->photo) }}"
+                                    src="{{  asset('produits/' . $p->photo) }}"
                                     style="display:none;width:100%;height:100%;object-fit:cover;border-radius:12px">
                                 <div id="photo-placeholder">
                                     <i class="bi bi-camera d-block fs-2 mb-2 opacity-50"></i>

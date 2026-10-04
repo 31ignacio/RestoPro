@@ -249,6 +249,12 @@ let knownIds = new Set([
 ]);
 let pollInterval;
 
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+    })[char]);
+}
+
 function buildCard(cmd) {
     const mins   = Math.max(0, parseInt(cmd.minutes || 0, 10));
     const urgent = mins >= 20;
@@ -277,9 +283,9 @@ function buildCard(cmd) {
         return `${separator}
         <div class="item-line ${isOld ? 'item-line-old' : ''}">
             <div class="item-qty">${it.quantite}</div>
-            <div class="flex-grow-1">${it.nom}</div>
+            <div class="flex-grow-1">${escapeHtml(it.nom)}</div>
             ${isOld ? `<small class="item-old-badge"><i class="bi bi-check2"></i> ${oldBadgeLabel(it.statut)}</small>` : ''}
-            ${it.notes ? `<small class="text-muted">${it.notes}</small>` : ''}
+            ${it.notes ? `<small class="text-muted">${escapeHtml(it.notes)}</small>` : ''}
         </div>`;
     }).join('');
 
@@ -297,9 +303,9 @@ function buildCard(cmd) {
     <div class="cuisine-card ${cardClass}" id="cuisine-card-${cmd.id}">
         <div class="d-flex align-items-start justify-content-between mb-2">
             <div>
-                <div class="fw-bold">${cmd.numero}</div>
+                <div class="fw-bold">${escapeHtml(cmd.numero)}</div>
                 <small class="text-muted">
-                    ${cmd.table ? 'Table '+cmd.table : 'Emporter'}
+                    ${cmd.table ? 'Table '+escapeHtml(cmd.table) : 'Emporter'}
                     · ${cmd.type === 'sur_place' ? 'Sur place' : cmd.type}
                 </small>
             </div>
@@ -309,7 +315,7 @@ function buildCard(cmd) {
         </div>
         <div class="mb-2">${items}</div>
         ${cmd.notes ? `<div class="alert alert-light py-1 px-2 mb-2" style="font-size:12px">
-            <i class="bi bi-chat-left-text me-1"></i>${cmd.notes}</div>` : ''}
+            <i class="bi bi-chat-left-text me-1"></i>${escapeHtml(cmd.notes)}</div>` : ''}
         <div class="small text-muted mb-2">
             <i class="bi bi-person-badge me-1"></i>${cmd.cuisinier ? 'Attribuée à ' + cmd.cuisinier : 'Non attribuée'}
         </div>
